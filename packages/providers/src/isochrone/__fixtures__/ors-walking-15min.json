@@ -1,0 +1,44 @@
+{
+  "type": "FeatureCollection",
+  "bbox": [34.7714, 32.0763, 34.7942, 32.0941],
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "group_index": 0,
+        "value": 900.0,
+        "center": [34.7818, 32.0853],
+        "area": 1845320.0
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [34.7818, 32.0941],
+            [34.7892, 32.0921],
+            [34.7942, 32.0853],
+            [34.7892, 32.0785],
+            [34.7818, 32.0763],
+            [34.7744, 32.0785],
+            [34.7714, 32.0853],
+            [34.7744, 32.0921],
+            [34.7818, 32.0941]
+          ]
+        ]
+      }
+    }
+  ],
+  "metadata": {
+    "attribution": "openrouteservice.org | OpenStreetMap contributors",
+    "service": "isochrones",
+    "timestamp": 1746700000000,
+    "query": {
+      "locations": [[34.7818, 32.0853]],
+      "range": [900.0],
+      "profile": "foot-walking"
+    },
+    "engine": {
+      "version": "8.0.0"
+    }
+  }
+}
