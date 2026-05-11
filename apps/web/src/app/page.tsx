@@ -12,12 +12,20 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { StadiaTileProvider, type TimeBandMin } from '@ilsochrone/providers';
+import {
+  StadiaTileProvider,
+  type Poi,
+  type PoiCategory,
+  type TimeBandMin,
+} from '@ilsochrone/providers';
 import { TimeSelector } from '@/components/controls/TimeSelector';
 import { ModeSelector } from '@/components/controls/ModeSelector';
+import { CategoryToggles } from '@/components/controls/CategoryToggles';
 import { DestinationCard } from '@/components/destination/DestinationCard';
 import { tryGeolocate } from '@/lib/geolocation';
 import { useIsochrone } from '@/lib/hooks/useIsochrone';
+import { usePois } from '@/lib/hooks/usePois';
+import { bboxOf } from '@/lib/polygon';
 import { PUBLIC_CONFIG } from '@/lib/config';
 import {
   DEFAULT_CATEGORIES,
@@ -26,10 +34,14 @@ import {
   type AppUrlState,
 } from '@/lib/url-state';
 
-// Client-only import: MapLibre touches `window` at module load.
+// Client-only imports: MapLibre touches `window` at module load.
 const IlsochroneMap = dynamic(
   () => import('@/components/map/IlsochroneMap.client').then((m) => m.IlsochroneMap),
   { ssr: false, loading: () => <div className="h-full w-full bg-muted" aria-hidden /> },
+);
+const PoiLayer = dynamic(
+  () => import('@/components/map/PoiLayer').then((m) => m.PoiLayer),
+  { ssr: false },
 );
 
 export default function HomePage() {
@@ -59,6 +71,7 @@ export default function HomePage() {
 
   const [state, setState] = useState<AppUrlState>(initialState);
   const [destination, setDestination] = useState<{ lng: number; lat: number } | null>(null);
+  const [selectedPoi, setSelectedPoi] = useState<Poi | null>(null);
 
   // On mount: if no `lng`/`lat` in URL, ask for geolocation and use it.
   const askedGeoRef = useRef(false);
@@ -97,11 +110,30 @@ export default function HomePage() {
     setState((s) => ({ ...s, mode }));
   }, []);
 
-  const onMapClick = useCallback((lngLat: { lng: number; lat: number }) => {
+  const onPickDestination = useCallback((lngLat: { lng: number; lat: number }) => {
     setDestination(lngLat);
+    setSelectedPoi(null);
   }, []);
 
-  const onDismissDestination = useCallback(() => setDestination(null), []);
+  const onMapBackgroundClick = useCallback(() => {
+    // Plain click dismisses any open destination card. No pin is dropped.
+    setDestination(null);
+    setSelectedPoi(null);
+  }, []);
+
+  const onDismissDestination = useCallback(() => {
+    setDestination(null);
+    setSelectedPoi(null);
+  }, []);
+
+  const onCategoriesChange = useCallback((categories: PoiCategory[]) => {
+    setState((s) => ({ ...s, categories }));
+  }, []);
+
+  const onPoiSelect = useCallback((poi: Poi) => {
+    setSelectedPoi(poi);
+    setDestination(null);
+  }, []);
 
   const { data, error, isLoading } = useIsochrone({
     lng: state.origin.lng,
@@ -109,6 +141,42 @@ export default function HomePage() {
     minutes: state.minutes,
     mode: state.mode,
   });
+
+  // POIs are scoped to the polygon's bbox; we filter to inside the polygon
+  // client-side in PoiLayer. Skip fetch entirely if no polygon or no categories.
+  const polygonBbox = useMemo(
+    () => (data?.polygon ? bboxOf(data.polygon) : null),
+    [data?.polygon],
+  );
+  const { data: poiData } = usePois({
+    bbox: polygonBbox,
+    categories: state.categories,
+  });
+  const pois = poiData?.pois ?? [];
+
+  // Determine which destination (if any) gets the popup. POI selection wins
+  // over a right-click drop point.
+  const activeDestination = useMemo(() => {
+    if (selectedPoi) {
+      return {
+        lng: selectedPoi.lngLat[0],
+        lat: selectedPoi.lngLat[1],
+        title: selectedPoi.name,
+        subtitle: selectedPoi.category,
+        sourceUrl: selectedPoi.sourceUrl,
+      };
+    }
+    if (destination) {
+      return {
+        lng: destination.lng,
+        lat: destination.lat,
+        title: 'Drop point',
+        subtitle: `${destination.lat.toFixed(5)}, ${destination.lng.toFixed(5)}`,
+        sourceUrl: undefined,
+      };
+    }
+    return null;
+  }, [selectedPoi, destination]);
 
   return (
     <main className="relative h-screen w-screen overflow-hidden">
@@ -130,17 +198,22 @@ export default function HomePage() {
           origin={state.origin}
           onOriginDragEnd={onOriginDragEnd}
           polygon={data?.polygon}
-          onMapClick={onMapClick}
+          onPickDestination={onPickDestination}
+          onMapBackgroundClick={onMapBackgroundClick}
           destination={
-            destination
+            activeDestination
               ? {
-                  lng: destination.lng,
-                  lat: destination.lat,
+                  lng: activeDestination.lng,
+                  lat: activeDestination.lat,
                   popup: (
                     <DestinationCard
-                      title="Drop point"
-                      subtitle={`${destination.lat.toFixed(5)}, ${destination.lng.toFixed(5)}`}
-                      destination={destination}
+                      title={activeDestination.title}
+                      subtitle={activeDestination.subtitle}
+                      destination={{
+                        lng: activeDestination.lng,
+                        lat: activeDestination.lat,
+                        name: selectedPoi?.name,
+                      }}
                       origin={state.origin}
                       mode={state.mode}
                       onClose={onDismissDestination}
@@ -149,17 +222,33 @@ export default function HomePage() {
                 }
               : undefined
           }
+          poiMarkers={
+            <PoiLayer
+              pois={pois}
+              polygon={data?.polygon}
+              onSelect={onPoiSelect}
+              selectedId={selectedPoi?.id}
+            />
+          }
         />
       </div>
 
       <header className="pointer-events-none absolute left-0 right-0 top-0 flex flex-wrap items-start justify-between gap-3 p-4">
         <div className="pointer-events-auto rounded-lg bg-background/95 px-4 py-2 shadow-md ring-1 ring-border backdrop-blur">
           <h1 className="text-base font-semibold">Ilsochrone</h1>
-          <p className="text-xs text-muted-foreground">Where can you get in {state.minutes} min?</p>
+          <p className="text-xs text-muted-foreground">
+            Where can you get in {state.minutes} min?
+          </p>
+          <p className="mt-0.5 text-[10px] text-muted-foreground/70">
+            Drag the pin to move origin · right-click the map to drop a destination
+          </p>
         </div>
-        <div className="pointer-events-auto flex flex-wrap gap-2">
-          <ModeSelector value={state.mode} onChange={onModeChange} />
-          <TimeSelector value={state.minutes} onChange={onMinutesChange} />
+        <div className="pointer-events-auto flex flex-col items-end gap-2">
+          <div className="flex flex-wrap gap-2">
+            <ModeSelector value={state.mode} onChange={onModeChange} />
+            <TimeSelector value={state.minutes} onChange={onMinutesChange} />
+          </div>
+          <CategoryToggles value={state.categories} onChange={onCategoriesChange} />
         </div>
       </header>
 

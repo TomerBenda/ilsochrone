@@ -67,7 +67,8 @@ Explicitly _out_ of MVP: cycling, transit, driving, traffic, multi-origin compar
 | FR-8 | URL state: `?lng=X&lat=Y&mode=walk&t=20&cats=park,cafe&z=14`. URL updates on every state change (debounced ~500 ms). Loading the URL reproduces the view. |
 | FR-9 | Errors (provider 429, network, no result) show a non-blocking toast with a retry action. |
 | FR-10 | All map UI works on a 360 px-wide phone viewport. |
-| FR-11 | Any chosen destination (map click, POI marker, "Surprise me" pick) exposes a handoff menu with deep links to Google Maps, Waze, Moovit, Apple Maps, and a "Copy coords" action. Each link opens the native app on phones and a web tab on desktop. |
+| FR-11 | Any chosen destination (right-click on the map, POI marker click, "Surprise me" pick) exposes a handoff menu with deep links to Google Maps, Waze, Moovit, Apple Maps, OpenStreetMap, and a "Copy coords" action. Each link opens the native app on phones and a web tab on desktop. |
+| FR-12 | Destination interactions are isolated from origin movement: drag the origin pin to move origin, right-click anywhere to set a destination, plain click to dismiss any open destination card. |
 
 ## 8. Non-functional requirements
 

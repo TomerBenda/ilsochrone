@@ -76,7 +76,9 @@ Open <http://localhost:3000>. You should see:
 Drag the pin or change the time — the polygon should re-render within ~1.5 s.
 Copy the URL, paste in a new tab — same view.
 
-Click anywhere on the map — a "Drop point" card appears with deep links to Google Maps, Waze, Moovit, Apple Maps, OpenStreetMap, plus a "Copy coords" button. On phones, those links open the native app if installed.
+**Right-click** anywhere on the map — a "Drop point" card appears with deep links to Google Maps, Waze, Moovit, Apple Maps, OpenStreetMap, plus a "Copy coords" button. On phones, hold to trigger the same gesture. Plain click dismisses an open card without setting a new one.
+
+POI markers (parks, cafés, restaurants, museums, viewpoints, beaches) render inside the polygon. Toggle categories from the panel under the time/mode controls. Click a marker → same destination card as right-click, with the POI's name pre-filled.
 
 ## 6. Known gaps (intentional)
 

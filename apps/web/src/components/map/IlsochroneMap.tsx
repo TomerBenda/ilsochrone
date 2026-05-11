@@ -32,8 +32,17 @@ interface Props {
   polygon?: Polygon | MultiPolygon;
   /** Optional destination pin + popup content (e.g. NavigateTo card). */
   destination?: { lng: number; lat: number; popup: React.ReactNode };
-  /** Fired when the user clicks the map outside the origin pin or destination popup. */
-  onMapClick?: (lngLat: { lng: number; lat: number }) => void;
+  /**
+   * Fired on right-click / long-press anywhere on the map. This is the
+   * "drop a destination" gesture — distinct from a plain click so the user
+   * can pan, dismiss, and interact with markers without accidentally pinning.
+   */
+  onPickDestination?: (lngLat: { lng: number; lat: number }) => void;
+  /**
+   * Fired on a plain click on the map background. Used by the page to
+   * dismiss an open destination card.
+   */
+  onMapBackgroundClick?: () => void;
   /** Optional POI markers to overlay. */
   poiMarkers?: React.ReactNode;
 }
@@ -46,7 +55,8 @@ export function IlsochroneMap({
   onOriginDragEnd,
   polygon,
   destination,
-  onMapClick,
+  onPickDestination,
+  onMapBackgroundClick,
   poiMarkers,
 }: Props) {
   const polygonFeature = useMemo<Feature<Polygon | MultiPolygon> | null>(() => {
@@ -54,9 +64,15 @@ export function IlsochroneMap({
     return { type: 'Feature', geometry: polygon, properties: {} };
   }, [polygon]);
 
-  const handleClick = (e: MapLayerMouseEvent) => {
-    if (!onMapClick) return;
-    onMapClick({ lng: e.lngLat.lng, lat: e.lngLat.lat });
+  const handleContextMenu = (e: MapLayerMouseEvent) => {
+    // Suppress the native browser context menu over the map canvas.
+    e.originalEvent?.preventDefault();
+    if (!onPickDestination) return;
+    onPickDestination({ lng: e.lngLat.lng, lat: e.lngLat.lat });
+  };
+
+  const handleClick = () => {
+    onMapBackgroundClick?.();
   };
 
   return (
@@ -74,6 +90,7 @@ export function IlsochroneMap({
         })
       }
       onClick={handleClick}
+      onContextMenu={handleContextMenu}
       style={{ width: '100%', height: '100%' }}
     >
       <NavigationControl position="top-right" />
@@ -135,13 +152,19 @@ export function IlsochroneMap({
 }
 
 function OriginPin() {
+  // Outer wrapper is a transparent hit-area extender so the drag target is
+  // forgiving (~48px) without changing the visible pin (~32px). The cursor
+  // affordance teaches the gesture: grab on hover, grabbing while dragging.
   return (
     <div
       role="img"
-      aria-label="Origin"
-      className="flex h-8 w-8 -translate-y-1 items-center justify-center rounded-full border-2 border-white bg-blue-600 shadow-lg"
+      aria-label="Origin (drag to move)"
+      title="Drag to move origin"
+      className="flex h-12 w-12 cursor-grab items-center justify-center active:cursor-grabbing"
     >
-      <span className="h-2 w-2 rounded-full bg-white" />
+      <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-blue-600 shadow-lg">
+        <span className="h-2 w-2 rounded-full bg-white" />
+      </div>
     </div>
   );
 }
