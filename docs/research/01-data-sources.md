@@ -68,7 +68,7 @@ The community-run `overpass-api.de` has been timing out under sustained scraper 
 **Walking MVP (now):**
 - Isochrone engine: **OpenRouteService**
 - Basemap: **Stadia Maps** + MapLibre GL JS
-- POIs: **Geoapify Places**, with an Overpass (Private.coffee mirror) adapter behind the same interface for raw-query escape hatches
+- POIs: **Geoapify Places** (accuracy gap acknowledged; see ADR-0006 for the hybrid Foursquare/Google plan when the user is ready to provision accounts). Overpass (Private.coffee mirror) remains available behind the same interface as an escape hatch.
 - Architecture: four provider interfaces — `IsochroneProvider`, `PoiProvider`, `TileProvider`, and (phase-2) `TransitDataProvider` — each with at least one MVP adapter and a clear contract. No provider-specific types leak into UI components.
 
 **Phase 2 (transit):**

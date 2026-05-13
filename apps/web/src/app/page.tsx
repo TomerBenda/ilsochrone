@@ -21,11 +21,12 @@ import {
 import { TimeSelector } from '@/components/controls/TimeSelector';
 import { ModeSelector } from '@/components/controls/ModeSelector';
 import { CategoryToggles } from '@/components/controls/CategoryToggles';
+import { SurpriseMe } from '@/components/controls/SurpriseMe';
 import { DestinationCard } from '@/components/destination/DestinationCard';
 import { tryGeolocate } from '@/lib/geolocation';
 import { useIsochrone } from '@/lib/hooks/useIsochrone';
 import { usePois } from '@/lib/hooks/usePois';
-import { bboxOf } from '@/lib/polygon';
+import { bboxOf, isInsidePolygon } from '@/lib/polygon';
 import { PUBLIC_CONFIG } from '@/lib/config';
 import {
   DEFAULT_CATEGORIES,
@@ -72,6 +73,12 @@ export default function HomePage() {
   const [state, setState] = useState<AppUrlState>(initialState);
   const [destination, setDestination] = useState<{ lng: number; lat: number } | null>(null);
   const [selectedPoi, setSelectedPoi] = useState<Poi | null>(null);
+  const [cameraTarget, setCameraTarget] = useState<{
+    lng: number;
+    lat: number;
+    zoom?: number;
+    key: number;
+  } | null>(null);
 
   // On mount: if no `lng`/`lat` in URL, ask for geolocation and use it.
   const askedGeoRef = useRef(false);
@@ -152,7 +159,37 @@ export default function HomePage() {
     bbox: polygonBbox,
     categories: state.categories,
   });
-  const pois = poiData?.pois ?? [];
+
+  // Polygon-clip the fetched POIs once and share the visible set with both
+  // PoiLayer (renders them) and SurpriseMe (picks from them).
+  const visiblePois = useMemo<Poi[]>(() => {
+    const list = poiData?.pois ?? [];
+    if (!data?.polygon) return list;
+    return list.filter((p) => isInsidePolygon([p.lngLat[0], p.lngLat[1]], data.polygon));
+  }, [poiData?.pois, data?.polygon]);
+
+  // If the selected POI falls out of the visible set (categories or time
+  // changed), dismiss it so the card doesn't orphan over an absent marker.
+  useEffect(() => {
+    if (!selectedPoi) return;
+    const stillVisible = visiblePois.some((p) => p.id === selectedPoi.id);
+    if (!stillVisible) setSelectedPoi(null);
+  }, [visiblePois, selectedPoi]);
+
+  const onSurprise = useCallback(() => {
+    if (visiblePois.length === 0) return;
+    const idx = Math.floor(Math.random() * visiblePois.length);
+    const pick = visiblePois[idx];
+    if (!pick) return;
+    setSelectedPoi(pick);
+    setDestination(null);
+    setCameraTarget({
+      lng: pick.lngLat[0],
+      lat: pick.lngLat[1],
+      zoom: 16,
+      key: Date.now(),
+    });
+  }, [visiblePois]);
 
   // Determine which destination (if any) gets the popup. POI selection wins
   // over a right-click drop point.
@@ -224,12 +261,12 @@ export default function HomePage() {
           }
           poiMarkers={
             <PoiLayer
-              pois={pois}
-              polygon={data?.polygon}
+              pois={visiblePois}
               onSelect={onPoiSelect}
               selectedId={selectedPoi?.id}
             />
           }
+          cameraTarget={cameraTarget ?? undefined}
         />
       </div>
 
@@ -248,7 +285,18 @@ export default function HomePage() {
             <ModeSelector value={state.mode} onChange={onModeChange} />
             <TimeSelector value={state.minutes} onChange={onMinutesChange} />
           </div>
-          <CategoryToggles value={state.categories} onChange={onCategoriesChange} />
+          <div className="flex flex-wrap items-center gap-2">
+            <CategoryToggles value={state.categories} onChange={onCategoriesChange} />
+            <SurpriseMe
+              disabled={visiblePois.length === 0}
+              onClick={onSurprise}
+              title={
+                visiblePois.length === 0
+                  ? 'No reachable POIs yet — toggle a category or expand time'
+                  : `Pick one of ${visiblePois.length} reachable places`
+              }
+            />
+          </div>
         </div>
       </header>
 

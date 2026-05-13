@@ -25,6 +25,8 @@ Open <http://localhost:3000>. See [docs/DEVELOPING.md](docs/DEVELOPING.md) for t
   - [ADR-0002 — Isochrone engine](docs/adr/0002-isochrone-engine.md)
   - [ADR-0003 — POI and tile providers](docs/adr/0003-poi-and-tile-providers.md)
   - [ADR-0004 — Deployment and AI workflow](docs/adr/0004-deployment-and-ai-workflow.md)
+  - [ADR-0005 — Navigation handoff](docs/adr/0005-navigation-handoff.md)
+  - [ADR-0006 — POI provider strategy (hybrid plan)](docs/adr/0006-poi-provider-strategy.md)
 
 ## Stack
 

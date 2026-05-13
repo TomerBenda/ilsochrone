@@ -80,6 +80,8 @@ Copy the URL, paste in a new tab — same view.
 
 POI markers (parks, cafés, restaurants, museums, viewpoints, beaches) render inside the polygon. Toggle categories from the panel under the time/mode controls. Click a marker → same destination card as right-click, with the POI's name pre-filled.
 
+The **Surprise me** button picks a random reachable POI, flies the camera there, and opens the destination card. Disabled when no POIs are visible (toggle a category or expand time). Animation respects `prefers-reduced-motion`.
+
 ## 6. Known gaps (intentional)
 
 These land in subsequent tasks:

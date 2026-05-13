@@ -85,6 +85,18 @@ Conventions:
 - **Files.** `apps/web/src/app/opengraph-image.tsx`, `README.md`, `docs/screenshots/`.
 - **DoD.** OG card validates on opengraph.xyz. README links to the live URL.
 
+### T-16 · POI accuracy phase 1 — Foursquare adapter + CompositePoiProvider
+- **Goal.** Land a `FoursquarePoiProvider` in `packages/providers/src/poi/foursquare.ts`. Introduce `CompositePoiProvider` that routes commercial categories (café, restaurant) to Foursquare and geographic categories (park, beach, viewpoint, museum) to Geoapify, per ADR-0006.
+- **Files.** `packages/providers/src/poi/{foursquare,composite}.ts`, `packages/providers/src/poi/foursquare.test.ts` (fixture-driven), `apps/web/src/app/api/pois/route.ts` (swap to composite when key present), `apps/web/.env.example` (add `FOURSQUARE_API_KEY`).
+- **DoD.** Unit tests cover the routing logic. With `FOURSQUARE_API_KEY` set, café/restaurant markers come from Foursquare; without it, the existing Geoapify-only path still works.
+- **Blocked by.** User provisioning a Foursquare developer account.
+
+### T-17 · Suggested-places panel (sortable)
+- **Goal.** Side panel listing the visible POIs with sortable columns: rating (Foursquare/Google), distance from origin (computed client-side), category. Selecting a row opens the destination card and flies the camera (reusing the SurpriseMe camera path).
+- **Files.** `apps/web/src/components/panels/SuggestedPlaces.tsx`, small distance helper in `apps/web/src/lib/geo.ts`.
+- **DoD.** Toggling sort columns reorders the list instantly. Selecting a row updates the map. Works on mobile (panel collapses to a bottom sheet).
+- **Blocked by.** T-16 (needs rating data).
+
 ### T-15 · Production cutover
 - **Goal.** Promote latest preview to production. Tag `v0.1.0`. Post-mortem note: what worked, what didn't, what changed in the PRD.
 - **Files.** `CHANGELOG.md`, `docs/postmortem-v0.1.md`.

@@ -9,7 +9,7 @@
  *     click events, and accepts a polygon and optional destination to render.
  *   - All provider logic stays out of components — they receive primitives.
  */
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import Map, {
   Marker,
   Popup,
@@ -18,6 +18,7 @@ import Map, {
   NavigationControl,
   AttributionControl,
   type MapLayerMouseEvent,
+  type MapRef,
 } from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import type { Polygon, MultiPolygon, Feature } from 'geojson';
@@ -45,6 +46,12 @@ interface Props {
   onMapBackgroundClick?: () => void;
   /** Optional POI markers to overlay. */
   poiMarkers?: React.ReactNode;
+  /**
+   * When this changes, the camera animates to the target. Used by "Surprise me".
+   * Include a `key` field that changes per invocation so repeated flights to
+   * the same lng/lat still fire.
+   */
+  cameraTarget?: { lng: number; lat: number; zoom?: number; key: number };
 }
 
 export function IlsochroneMap({
@@ -58,11 +65,34 @@ export function IlsochroneMap({
   onPickDestination,
   onMapBackgroundClick,
   poiMarkers,
+  cameraTarget,
 }: Props) {
   const polygonFeature = useMemo<Feature<Polygon | MultiPolygon> | null>(() => {
     if (!polygon) return null;
     return { type: 'Feature', geometry: polygon, properties: {} };
   }, [polygon]);
+
+  const mapRef = useRef<MapRef>(null);
+
+  // Drive camera flights from outside. Re-fires whenever cameraTarget.key
+  // changes — pick any monotonic number (Date.now() works) when invoking.
+  useEffect(() => {
+    if (!cameraTarget) return;
+    const map = mapRef.current;
+    if (!map) return;
+    const reduced =
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    map.flyTo({
+      center: [cameraTarget.lng, cameraTarget.lat],
+      zoom: cameraTarget.zoom ?? Math.max(viewState.zoom, 15),
+      duration: reduced ? 0 : 1200,
+      essential: true,
+    });
+    // We intentionally exclude viewState.zoom from the dep list — we want
+    // this effect to fire only when cameraTarget changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cameraTarget]);
 
   const handleContextMenu = (e: MapLayerMouseEvent) => {
     // Suppress the native browser context menu over the map canvas.
@@ -77,6 +107,7 @@ export function IlsochroneMap({
 
   return (
     <Map
+      ref={mapRef}
       mapStyle={tileStyle.styleUrl}
       attributionControl={false}
       longitude={viewState.longitude}
