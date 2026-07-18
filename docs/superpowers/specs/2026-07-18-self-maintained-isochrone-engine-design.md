@@ -30,10 +30,28 @@ Valhalla-in-WASM is experimental and imports someone else's build complexity. Op
 *building blocks* (OSM parsing, graph search, turf geometry) are mature — so we own the
 core (graph model, search, polygon extraction) and lean on libraries for commodity parts.
 
+### Prior-art research (2026-07-18)
+
+- **OSM → walk-graph tooling is a Python story.** [pyrosm](https://pyrosm.readthedocs.io/)
+  (v0.11.0, active 2026) reads local Geofabrik PBF dumps — no Overpass dependency, which
+  this project already distrusts — and extracts walking networks into graph form at
+  city-to-country scale. [OSMnx](https://osmnx.readthedocs.io/) 2.x is the canonical
+  street-network toolkit (simplification, bidirectional walk graphs, analysis/plotting).
+  [QuackOSM](https://github.com/kraina-ai/quackosm) (DuckDB-based) is a modern alternative
+  for country-scale extracts if pyrosm ever falls short. The Node ecosystem offers only
+  low-level PBF parsers (osm-pbf-parser-node, osm-read) — graph building, walkability
+  profiles, and simplification would all be hand-rolled.
+- **Polygon extraction: "isochrones are not alpha shapes."** Concave hulls / alpha shapes
+  over reached nodes are parameter-sensitive and can degenerate; production engines
+  (Valhalla) instead rasterize travel times onto a grid and contour it with marching
+  squares — robust, deterministic, and naturally produces MultiPolygons with holes for
+  unreachable pockets. Alpha shapes remain acceptable at city scale but are the weaker
+  option.
+
 ## 3. Architecture
 
 ```
-packages/engine-pipeline   build-time Node script (never deployed)
+tools/graph-pipeline       build-time Python project (uv-managed, never deployed)
     OSM extract ──► walkable street graph ──► compact binary asset (2–5 MB)
 
 packages/engine            runtime, pure TypeScript (no Node APIs)
@@ -44,29 +62,42 @@ packages/providers         existing package
     ORS adapter retained as fallback/comparison behind an env flag
 ```
 
+**Language split:** the pipeline is Python — that's where all the OSM prior art lives
+(pyrosm, OSMnx, shapely/geopandas) — while everything deployed stays TypeScript. The
+**versioned binary asset is the language-neutral contract** between the two: its format
+is specified in a short reference doc, the pipeline has Python-side tests, and a small
+fixture asset checked into the repo gives the TS engine a cross-language round-trip test.
+The pipeline lives in `tools/` (own `pyproject.toml`, uv-managed), not in the pnpm
+workspace.
+
 Route handler, UI, and `IsochroneProvider` interface are untouched — this is the adapter
 swap ADR-0002 was designed for, pointed at our own engine.
 
-## 4. Data pipeline (`packages/engine-pipeline`)
+## 4. Data pipeline (`tools/graph-pipeline`, Python)
 
-A script run locally or in CI whenever map data should refresh
-(`pnpm --filter engine-pipeline build-graph`):
+A Python project run locally or in CI whenever map data should refresh
+(`uv run build-graph`). Built on the ecosystem where OSM prior art lives:
+**pyrosm** (local PBF → walking network), **networkx/OSMnx** (graph simplification and
+sanity analysis), **shapely/geopandas** (geometry). No Overpass dependency.
 
 1. **Download** the Geofabrik Israel OSM extract (~100 MB; cached locally; never committed).
 2. **Clip** to the Tel Aviv metro bounding box — a tunable constant, roughly
    lon 34.74–34.92, lat 31.98–32.20.
-3. **Filter** ways by a walkability profile: footway, path, pedestrian, residential,
-   living_street, steps, service and minor roads; exclude motorway/trunk, `foot=no`,
-   `access=private`. A library handles PBF parsing; profile logic is ours.
+3. **Extract** the walking network via pyrosm's walking profile, tightened by our own
+   config: include footway, path, pedestrian, residential, living_street, steps, service
+   and minor roads; exclude motorway/trunk, `foot=no`, `access=private`.
 4. **Build the graph**: nodes at intersections and way endpoints; edges carry length,
    walk-time (5 km/h default, slower on steps), and real street geometry (kept for
-   polygon accuracy).
+   polygon accuracy). Simplify degree-2 chains into single edges.
 5. **Emit** one versioned binary asset (typed arrays: node coordinates, CSR adjacency,
    edge geometry), expected 2–5 MB, **committed to the repo** so deploys are reproducible
-   without re-running the pipeline.
+   without re-running the pipeline. The format is documented in a reference doc and is
+   the language-neutral contract with the TS engine.
 
 The walkability profile is a config object (speeds + tag filters). Cycling later = a
-second profile emitting a second asset; no pipeline redesign.
+second profile emitting a second asset; no pipeline redesign. Being offline-only, the
+Python toolchain never affects the deployed app; CI runs it only to validate, not to
+deploy.
 
 ## 5. Graph asset format & `GraphSource`
 
@@ -116,11 +147,14 @@ computeIsochrone(graph: WalkGraph, origin: LngLat, minutes: number): Polygon | M
    edges** on the frontier — interpolated along real edge geometry so the isochrone
    boundary is honest. Scale: ~100k nodes metro-wide; a 30-min cutoff touches a fraction;
    milliseconds per query, well inside the 1.5 s P50 budget.
-3. **Polygonize.** Reached nodes + sampled edge geometry + frontier tips form a point
-   cloud; a concave hull (turf, tuned tightness) traces the outline; a buffer-out/in pass
-   smooths spikes. Degenerate hull → looser fallback hull, flagged in metadata. The
-   polygonizer is an isolated module with a clean contract so the strategy can be swapped
-   (e.g. edge-buffer unions) without touching search.
+3. **Polygonize.** Following production-engine prior art (Valhalla) rather than alpha
+   shapes: reached nodes + sampled edge geometry + frontier tips are rasterized onto a
+   small travel-time grid (~50–100 m cells over the query's bounding area), which is
+   contoured at the minutes cutoff with **marching squares** (turf's isobands or a small
+   own implementation), then simplified and lightly smoothed. Robust (no degenerate-hull
+   cases), deterministic, and naturally yields MultiPolygons with holes for unreachable
+   pockets. The polygonizer is an isolated module with a clean contract; a concave-hull
+   strategy can be swapped in for comparison without touching search.
 
 **Serverless loading:** first request on a fresh lambda parses the asset (tens of ms) and
 caches the `WalkGraph` at module level; subsequent requests reuse it.
@@ -138,7 +172,7 @@ Optional `ISOCHRONE_FALLBACK=ors` falls back to ORS on any engine error.
 | Condition | Behavior |
 | --- | --- |
 | Origin outside coverage / unsnappable | `OutOfCoverageError` → HTTP 422, clear message; existing FR-9 toast |
-| Polygonizer degraded to fallback hull | HTTP 200, flagged in metadata |
+| Polygonizer degraded (e.g. empty contour at tiny time bands → falls back to a minimal buffer around the origin) | HTTP 200, flagged in metadata |
 | Asset unreadable / format mismatch | Loud load failure with clear log; optional ORS fallback |
 | Invalid request | Existing Zod 400 path, unchanged |
 
@@ -149,8 +183,11 @@ Optional `ISOCHRONE_FALLBACK=ors` falls back to ORS on any engine error.
   deterministic output.
 - **Polygon properties:** valid topology; contains origin; nesting (5-min ⊆ 10-min ⊆ …,
   small tolerance).
-- **Pipeline:** runs on a tiny checked-in OSM fixture (a few blocks); asserts node/edge
-  counts and a header snapshot.
+- **Pipeline (pytest):** runs on a tiny checked-in OSM fixture (a few blocks); asserts
+  node/edge counts, walkability filtering, and a header snapshot.
+- **Cross-language contract:** a small fixture asset built by the Python pipeline is
+  checked in; a TS engine test loads it and asserts structure + a known shortest path —
+  guarding the binary format across both languages.
 - **Reality check vs ORS:** dev script comparing polygons for ~10 origins × 3 time bands
   by intersection-over-union; target IoU ≥ ~0.75 (gross-disagreement detector, not exact
   match — data snapshots and speed models differ). Results recorded in the ADR.
@@ -172,3 +209,7 @@ Optional `ISOCHRONE_FALLBACK=ors` falls back to ORS on any engine error.
 - Remote/live graph data source (interface exists; only `BundledGraphSource` is built).
 - Browser-side computation (kept possible by the pure-TS engine, not built).
 - Any paid infrastructure.
+- **UI/UX elevation.** The current UI is acknowledged prototype-grade; raising it to
+  product quality is a separate, planned follow-up round. This leap deliberately keeps
+  the UI contract frozen (same polygon GeoJSON in, same rendering) so the engine swap
+  and the UI round stay independent.
