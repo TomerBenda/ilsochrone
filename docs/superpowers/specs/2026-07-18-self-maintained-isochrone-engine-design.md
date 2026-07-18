@@ -41,6 +41,17 @@ core (graph model, search, polygon extraction) and lean on libraries for commodi
   for country-scale extracts if pyrosm ever falls short. The Node ecosystem offers only
   low-level PBF parsers (osm-pbf-parser-node, osm-read) — graph building, walkability
   profiles, and simplification would all be hand-rolled.
+- **Broadened survey (round 2) found no adoptable engine.** JS pathfinding libs
+  ([geojson-path-finder](https://github.com/perliedman/geojson-path-finder),
+  [ngraph.path](https://github.com/anvaka/ngraph.path), jKstra) do point-to-point routes
+  only — none expose the cutoff search + reached-set output an isochrone needs, and none
+  use a compact preprocessed graph format. The npm
+  [`isochrone`](https://libraries.io/npm/isochrone) package (OSRM bindings + concaveman)
+  is abandoned (last release 2018); mapbox/osrm-isochrone is archived. On the Rust side,
+  [osm_graph/pysochrone](https://docs.rs/osm_graph) is the closest match in spirit but
+  early-stage (v0.2.0, ~12% documented, July 2026) — watchable, not adoptable; Rust→WASM
+  remains a future perf escape hatch we won't need at Tel Aviv scale. These findings
+  validate owning the core.
 - **Polygon extraction: "isochrones are not alpha shapes."** Concave hulls / alpha shapes
   over reached nodes are parameter-sensitive and can degenerate; production engines
   (Valhalla) instead rasterize travel times onto a grid and contour it with marching
