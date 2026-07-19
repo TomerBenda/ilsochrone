@@ -6,8 +6,9 @@
 import { OrsIsochroneProvider, type IsochroneProvider } from '@ilsochrone/providers';
 import { BundledGraphSource, LocalIsochroneProvider } from '@ilsochrone/providers/server';
 
-// Flipped to 'local' after the ORS validation run (rollout §10).
-const DEFAULT_PROVIDER = 'ors';
+// 'local' is the default since the ORS validation run passed (mean IoU 0.825,
+// docs/research/02-local-vs-ors-iou.md); set ISOCHRONE_PROVIDER=ors to compare.
+const DEFAULT_PROVIDER = 'local';
 
 export class MissingApiKeyError extends Error {
   constructor() {

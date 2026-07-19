@@ -17,6 +17,13 @@ afterEach(() => {
 });
 
 describe('getIsochroneProviders', () => {
+  it('defaults to local when ISOCHRONE_PROVIDER is unset', () => {
+    delete process.env.ISOCHRONE_PROVIDER;
+    delete process.env.ISOCHRONE_FALLBACK;
+    __resetIsochroneProvidersForTests();
+    expect(getIsochroneProviders().primary.name).toBe('local');
+  });
+
   it('selects local when ISOCHRONE_PROVIDER=local, no fallback by default', () => {
     process.env.ISOCHRONE_PROVIDER = 'local';
     delete process.env.ISOCHRONE_FALLBACK;
