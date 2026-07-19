@@ -30,7 +30,10 @@ def build() -> None:
             node(1 + r * 4 + c, B_LNG + c * D, B_LAT + r * D)
     node(13, B_LNG + 3 * D, B_LAT - D)        # steps endpoint
     node(14, B_LNG + 4 * D, B_LAT + D)        # dead-end chain (merge away)
-    node(15, B_LNG + 5 * D, B_LAT + D)        # dead-end chain (merge away)
+    # Node 15 is offset north so the merged polyline is NOT collinear —
+    # otherwise Douglas-Peucker (correctly) strips the interior points and
+    # geometry preservation through the merge would be untestable.
+    node(15, B_LNG + 5 * D, B_LAT + D + 0.0003)  # dead-end chain (merge away)
     node(16, B_LNG + 6 * D, B_LAT + D)        # dead-end endpoint
     node(17, B_LNG - D, 32.0780)              # motorway (excluded)
     node(18, B_LNG + D, 32.0780)
