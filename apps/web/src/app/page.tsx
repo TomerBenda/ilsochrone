@@ -27,6 +27,7 @@ import { CategoryToggles } from '@/components/controls/CategoryToggles';
 import { SurpriseMe } from '@/components/controls/SurpriseMe';
 import { DestinationCard } from '@/components/destination/DestinationCard';
 import { BandLegend } from '@/components/legend/BandLegend';
+import { CoachMark } from '@/components/onboarding/CoachMark';
 import { tryGeolocate } from '@/lib/geolocation';
 import { useIsochroneBands } from '@/lib/hooks/useIsochroneBands';
 import { usePois } from '@/lib/hooks/usePois';
@@ -109,7 +110,12 @@ export default function HomePage() {
     window.history.replaceState(null, '', next);
   }, [state]);
 
+  // Tracks whether the user has discovered the two core gestures; gates the
+  // one-time coach mark.
+  const [hasInteracted, setHasInteracted] = useState(false);
+
   const onOriginDragEnd = useCallback((next: { lng: number; lat: number }) => {
+    setHasInteracted(true);
     setState((s) => ({ ...s, origin: next }));
   }, []);
 
@@ -122,8 +128,15 @@ export default function HomePage() {
   }, []);
 
   const onPickDestination = useCallback((lngLat: { lng: number; lat: number }) => {
+    setHasInteracted(true);
     setDestination(lngLat);
     setSelectedPoi(null);
+  }, []);
+
+  const onTakeMeBack = useCallback(() => {
+    const origin = { lng: PUBLIC_CONFIG.defaultLng, lat: PUBLIC_CONFIG.defaultLat };
+    setState((s) => ({ ...s, origin }));
+    setCameraTarget({ ...origin, zoom: PUBLIC_CONFIG.defaultZoom, key: Date.now() });
   }, []);
 
   const onMapBackgroundClick = useCallback(() => {
@@ -335,20 +348,44 @@ export default function HomePage() {
         />
       </div>
 
-      <Status isLoading={isLoading} error={error} />
+      {data && visiblePois.length === 0 && state.categories.length > 0 && !error && (
+        <div className="pointer-events-none absolute bottom-16 left-4 hidden md:block">
+          <div className="rounded-full bg-background/95 px-3 py-1.5 text-xs text-muted-foreground shadow-md ring-1 ring-border backdrop-blur">
+            No places in range — try more time? 🤏
+          </div>
+        </div>
+      )}
+
+      <CoachMark dismissed={hasInteracted} />
+
+      <Status error={error} onTakeMeBack={onTakeMeBack} />
     </main>
   );
 }
 
-function Status({ isLoading, error }: { isLoading: boolean; error: unknown }) {
-  if (!error && !isLoading) return null;
-  const message = error
-    ? errorMessage(error)
-    : 'Computing isochrone…';
+function Status({ error, onTakeMeBack }: { error: unknown; onTakeMeBack: () => void }) {
+  if (!error) return null;
+  const status = (error as { status?: number }).status;
+  if (status === 422) {
+    return (
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2">
+        <div className="ilso-pop flex items-center gap-3 rounded-xl bg-background/95 px-4 py-3 text-sm shadow-md ring-1 ring-border backdrop-blur">
+          <span>🗺️ Outside the map! This demo covers the Tel Aviv metro.</span>
+          <button
+            type="button"
+            onClick={onTakeMeBack}
+            className="shrink-0 rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary-hover"
+          >
+            Take me back
+          </button>
+        </div>
+      </div>
+    );
+  }
   return (
-    <div className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 transform">
-      <div className="pointer-events-auto rounded-full bg-background/95 px-4 py-1.5 text-sm shadow-md ring-1 ring-border backdrop-blur">
-        {message}
+    <div className="pointer-events-none absolute bottom-6 left-1/2 -translate-x-1/2">
+      <div className="rounded-full bg-background/95 px-4 py-1.5 text-sm shadow-md ring-1 ring-border backdrop-blur">
+        {errorMessage(error)}
       </div>
     </div>
   );
@@ -357,7 +394,6 @@ function Status({ isLoading, error }: { isLoading: boolean; error: unknown }) {
 function errorMessage(err: unknown): string {
   if (typeof err === 'object' && err !== null && 'status' in err) {
     const status = (err as { status?: number }).status;
-    if (status === 422) return 'This spot is outside the covered area (Tel Aviv metro).';
     if (status === 429) return 'Rate-limited. Try again in a few seconds.';
     if (status === 502) return 'Upstream routing service is unavailable.';
   }
