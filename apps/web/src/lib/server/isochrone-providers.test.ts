@@ -78,6 +78,32 @@ describe('route integration (local provider)', () => {
     expect(body.error).toBe('out_of_coverage');
   });
 
+  it('serves five nested bands in one response', async () => {
+    process.env.ISOCHRONE_PROVIDER = 'local';
+    __resetIsochroneProvidersForTests();
+    const { GET } = await import('../../app/api/isochrone/route');
+    const res = await GET(
+      new Request('http://test/api/isochrone?lng=34.7745&lat=32.075&t=30&mode=walk&bands=1'),
+    );
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.type).toBe('FeatureCollection');
+    expect(body.features.map((f: { properties: { minutes: number } }) => f.properties.minutes)).toEqual([
+      5, 10, 15, 20, 30,
+    ]);
+    expect(body.metadata.provider).toBe('local');
+  });
+
+  it('bands request still maps out-of-coverage to 422', async () => {
+    process.env.ISOCHRONE_PROVIDER = 'local';
+    __resetIsochroneProvidersForTests();
+    const { GET } = await import('../../app/api/isochrone/route');
+    const res = await GET(
+      new Request('http://test/api/isochrone?lng=35.2137&lat=31.7683&t=30&mode=walk&bands=1'),
+    );
+    expect(res.status).toBe(422);
+  });
+
   it('serves a walk isochrone from the bundled asset', async () => {
     process.env.ISOCHRONE_PROVIDER = 'local';
     __resetIsochroneProvidersForTests();

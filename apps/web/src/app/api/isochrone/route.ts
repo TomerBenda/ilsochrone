@@ -33,6 +33,8 @@ import {
   OrsError,
   TIME_BANDS_MIN,
   TravelModeSchema,
+  type IsochroneProvider,
+  type TimeBandMin,
 } from '@ilsochrone/providers';
 import { OutOfCoverageError } from '@ilsochrone/providers/server';
 import {
@@ -53,7 +55,10 @@ const QuerySchema = z.object({
       (TIME_BANDS_MIN as readonly number[]).includes(n),
     ),
   mode: TravelModeSchema.default('walk'),
+  bands: z.coerce.number().int().min(0).max(1).default(0),
 });
+
+const CACHE_HEADERS = { 'Cache-Control': 's-maxage=60, stale-while-revalidate=600' };
 
 const isDev = process.env.NODE_ENV !== 'production';
 
@@ -64,6 +69,7 @@ export async function GET(request: Request) {
     lat: url.searchParams.get('lat'),
     t: url.searchParams.get('t'),
     mode: url.searchParams.get('mode') ?? undefined,
+    bands: url.searchParams.get('bands') ?? undefined,
   });
   if (!parsed.success) {
     return NextResponse.json(
@@ -79,19 +85,54 @@ export async function GET(request: Request) {
       minutes: parsed.data.t,
     });
     const { primary, fallback } = getIsochroneProviders();
-    let result;
+    const wantBands = parsed.data.bands === 1;
+
+    const run = async (p: IsochroneProvider): Promise<NextResponse> => {
+      if (!wantBands) {
+        return NextResponse.json(await p.getIsochrone(req), { headers: CACHE_HEADERS });
+      }
+      const bandList = TIME_BANDS_MIN.filter((b) => b <= req.minutes) as [TimeBandMin, ...TimeBandMin[]];
+      if (p.getIsochroneBands) {
+        const r = await p.getIsochroneBands({ origin: req.origin, mode: req.mode, bands: bandList });
+        return NextResponse.json(
+          {
+            type: 'FeatureCollection',
+            features: r.bands.map((b) => ({
+              type: 'Feature',
+              geometry: b.polygon,
+              properties: { minutes: b.minutes },
+            })),
+            metadata: r.metadata,
+          },
+          { headers: CACHE_HEADERS },
+        );
+      }
+      // Band-less provider (e.g. ORS): degrade to a single feature at the
+      // requested time; the client hook falls back to per-time refetching.
+      const single = await p.getIsochrone(req);
+      return NextResponse.json(
+        {
+          type: 'FeatureCollection',
+          features: [{ type: 'Feature', geometry: single.polygon, properties: { minutes: req.minutes } }],
+          metadata: {
+            ...single.metadata,
+            warnings: [
+              ...(single.metadata.warnings ?? []),
+              { code: 'bands_unsupported', message: 'Active provider computes one band per request.' },
+            ],
+          },
+        },
+        { headers: CACHE_HEADERS },
+      );
+    };
+
     try {
-      result = await primary.getIsochrone(req);
+      return await run(primary);
     } catch (err) {
       if (err instanceof OutOfCoverageError || !fallback) throw err;
       console.warn('[/api/isochrone] primary provider failed; falling back to ors', summarize(err));
-      result = await fallback.getIsochrone(req);
+      return await run(fallback);
     }
-    return NextResponse.json(result, {
-      headers: {
-        'Cache-Control': 's-maxage=60, stale-while-revalidate=600',
-      },
-    });
   } catch (err) {
     return errorResponse(err);
   }
