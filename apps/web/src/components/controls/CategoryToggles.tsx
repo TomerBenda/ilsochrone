@@ -58,7 +58,7 @@ export function CategoryToggles({ value, onChange, className }: Props) {
             className={cn(
               'flex items-center gap-1.5 rounded px-2 py-1 text-xs font-medium transition-colors',
               on
-                ? 'bg-blue-600 text-white'
+                ? 'bg-primary text-primary-foreground'
                 : 'text-foreground hover:bg-accent hover:text-accent-foreground',
             )}
           >

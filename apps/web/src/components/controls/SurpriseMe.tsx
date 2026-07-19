@@ -23,7 +23,7 @@ export function SurpriseMe({ disabled, onClick, className, title }: Props) {
         'inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm font-medium shadow-sm transition-colors',
         disabled
           ? 'cursor-not-allowed border-border bg-background text-muted-foreground opacity-60'
-          : 'border-blue-600 bg-blue-600 text-white hover:bg-blue-700',
+          : 'border-primary bg-primary text-primary-foreground hover:bg-primary-hover',
         className,
       )}
     >

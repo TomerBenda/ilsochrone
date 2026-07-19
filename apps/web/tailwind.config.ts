@@ -13,9 +13,15 @@ const config: Config = {
         border: 'hsl(var(--border))',
         accent: 'hsl(var(--accent))',
         'accent-foreground': 'hsl(var(--accent-foreground))',
+        primary: 'hsl(var(--primary))',
+        'primary-hover': 'hsl(var(--primary-hover))',
+        'primary-foreground': 'hsl(var(--primary-foreground))',
       },
       fontFamily: {
-        sans: ['ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'],
+        sans: ['var(--font-sans)', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'],
+      },
+      borderRadius: {
+        xl: 'var(--radius)',
       },
     },
   },

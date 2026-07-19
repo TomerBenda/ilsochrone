@@ -5,13 +5,19 @@
 /* shadcn-style design tokens, simplified for MVP. */
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222 47% 11%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
-    --border: 214 32% 91%;
-    --accent: 210 40% 96%;
-    --accent-foreground: 222 47% 11%;
+    --background: 40 33% 99%;
+    --foreground: 24 10% 10%;
+    --muted: 40 12% 94%;
+    --muted-foreground: 25 5% 45%;
+    --border: 33 14% 88%;
+    --accent: 33 100% 96%;
+    --accent-foreground: 15 75% 28%;
+    --primary: 21 88% 40%; /* #C2410C — 4.8:1 on white */
+    --primary-hover: 21 90% 48%; /* #EA580C */
+    --primary-foreground: 0 0% 100%;
+    --band-fill: #f97316;
+    --band-ring: #c2410c;
+    --radius: 0.75rem;
   }
 
   [data-theme='dark'],
@@ -37,6 +43,19 @@
 /* Make MapLibre's canvas fill the map container. */
 .maplibregl-map {
   font-family: inherit;
+}
+
+/* Small pop-in for cards; disabled under reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes ilso-pop {
+    from {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+  }
+  .ilso-pop {
+    animation: ilso-pop 180ms ease-out;
+  }
 }
 
 /* Strip the default popup chrome — DestinationCard brings its own. */

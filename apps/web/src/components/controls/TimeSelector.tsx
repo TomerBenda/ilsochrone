@@ -22,9 +22,9 @@ export function TimeSelector({ value, onChange }: Props) {
           aria-checked={value === m}
           onClick={() => onChange(m)}
           className={cn(
-            'min-w-[3rem] rounded px-3 py-1.5 text-sm font-medium transition-colors',
+            'min-w-[3rem] rounded px-3 py-1.5 text-sm font-medium tabular-nums transition-colors',
             value === m
-              ? 'bg-blue-600 text-white'
+              ? 'bg-primary text-primary-foreground'
               : 'text-foreground hover:bg-accent hover:text-accent-foreground',
           )}
         >

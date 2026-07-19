@@ -34,7 +34,7 @@ export function ModeSelector({ value, onChange }: Props) {
           className={cn(
             'flex items-center gap-1.5 rounded px-3 py-1.5 text-sm font-medium transition-colors',
             value === mode
-              ? 'bg-blue-600 text-white'
+              ? 'bg-primary text-primary-foreground'
               : enabled
                 ? 'text-foreground hover:bg-accent hover:text-accent-foreground'
                 : 'cursor-not-allowed text-muted-foreground opacity-60',

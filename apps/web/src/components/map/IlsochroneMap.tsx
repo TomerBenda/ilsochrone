@@ -193,7 +193,7 @@ function OriginPin() {
       title="Drag to move origin"
       className="flex h-12 w-12 cursor-grab items-center justify-center active:cursor-grabbing"
     >
-      <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-blue-600 shadow-lg">
+      <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-primary shadow-lg">
         <span className="h-2 w-2 rounded-full bg-white" />
       </div>
     </div>
