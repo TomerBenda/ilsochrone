@@ -67,6 +67,31 @@ describe('polygonize', () => {
     expect(Math.abs(cLat - 32.08)).toBeLessThan(0.0007);
   });
 
+  it('is symmetric around a mid-edge origin (detects half-cell grid offset)', () => {
+    // From the exact midpoint with a 60 s budget the reachable stretch is
+    // symmetric east/west, so the contoured polygon must be too. A systematic
+    // half-cell (30 m) transform offset shifts BOTH frontiers the same way,
+    // producing ~60 m of east/west asymmetry; raster + simplify noise measures
+    // ~20 m. The 38 m tolerance sits between the two, so this fails on a real
+    // transform bug but not on discretization jitter. (The lone-sample test
+    // above can't catch offsets: tiny budgets fall back to the origin circle.)
+    const mid: [number, number] = [34.7821, 32.08];
+    const { result } = isoOn(LINE, mid, 60);
+    expect(result.degraded).toBe(false);
+    const coords = (
+      result.polygon.type === 'Polygon' ? result.polygon.coordinates : result.polygon.coordinates.flat()
+    ).flat();
+    const lngs = coords.map((c) => c[0]!);
+    const lats = coords.map((c) => c[1]!);
+    const eastReach = Math.max(...lngs) - mid[0];
+    const westReach = mid[0] - Math.min(...lngs);
+    const northReach = Math.max(...lats) - mid[1];
+    const southReach = mid[1] - Math.min(...lats);
+    const tolDeg = 0.0004; // ~38 m — above noise (~20 m), below half-cell signature (~60 m)
+    expect(Math.abs(eastReach - westReach)).toBeLessThan(tolDeg);
+    expect(Math.abs(northReach - southReach)).toBeLessThan(tolDeg);
+  });
+
   it('is deterministic', () => {
     const a = isoOn(LINE, [34.781, 32.08], 120).result;
     const b = isoOn(LINE, [34.781, 32.08], 120).result;
