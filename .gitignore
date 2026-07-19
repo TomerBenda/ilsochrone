@@ -36,3 +36,10 @@ test-results/
 
 # misc
 *.tsbuildinfo
+
+# python pipeline
+tools/graph-pipeline/.cache/
+tools/graph-pipeline/.venv/
+__pycache__/
+*.pyc
+.pytest_cache/

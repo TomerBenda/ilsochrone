@@ -1,0 +1,32 @@
+[project]
+name = "graph-pipeline"
+version = "0.1.0"
+description = "Build-time OSM -> walk-graph binary asset pipeline for ilsochrone."
+requires-python = ">=3.12,<3.13"
+# NOTE: the spec's first choice, pyrosm, is uninstallable on Windows: its hard
+# dependency cykhash ships source-only (no wheels) and needs MSVC. We use the
+# spec's fallback instead: a hand-rolled pyosmium extractor (extract.py).
+dependencies = [
+  "osmnx>=2.0",
+  "networkx>=3.2",
+  "shapely>=2.0",
+  "geopandas>=1.0",
+  "numpy>=1.26",
+  "osmium>=3.7",
+]
+
+[project.scripts]
+build-graph = "graph_pipeline.cli:main"
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/graph_pipeline"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
