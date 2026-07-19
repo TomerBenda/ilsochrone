@@ -21,7 +21,7 @@ export function ModeSelector({ value, onChange }: Props) {
     <div
       role="radiogroup"
       aria-label="Travel mode"
-      className="inline-flex rounded-md border border-border bg-background p-1 shadow-sm"
+      className="inline-flex rounded-lg bg-muted p-1"
     >
       {MODES.map(({ mode, label, Icon, enabled, tip }) => (
         <button

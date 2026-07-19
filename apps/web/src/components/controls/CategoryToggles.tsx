@@ -27,6 +27,16 @@ const CATEGORIES: { id: PoiCategory; label: string; Icon: LucideIcon }[] = [
   { id: 'beach', label: 'Beaches', Icon: Waves },
 ];
 
+/** Pastel chip fill + saturated icon per category (warm & playful, harmonized). */
+const CATEGORY_STYLES: Record<PoiCategory, { chip: string; icon: string }> = {
+  park: { chip: 'bg-emerald-100 text-emerald-900', icon: 'text-emerald-600' },
+  cafe: { chip: 'bg-amber-100 text-amber-900', icon: 'text-amber-600' },
+  restaurant: { chip: 'bg-rose-100 text-rose-900', icon: 'text-rose-600' },
+  museum: { chip: 'bg-violet-100 text-violet-900', icon: 'text-violet-600' },
+  viewpoint: { chip: 'bg-sky-100 text-sky-900', icon: 'text-sky-600' },
+  beach: { chip: 'bg-cyan-100 text-cyan-900', icon: 'text-cyan-600' },
+};
+
 export function CategoryToggles({ value, onChange, className }: Props) {
   const enabled = new Set(value);
   const toggle = (id: PoiCategory) => {
@@ -40,10 +50,7 @@ export function CategoryToggles({ value, onChange, className }: Props) {
     <div
       role="group"
       aria-label="POI categories"
-      className={cn(
-        'flex flex-wrap gap-1 rounded-md border border-border bg-background p-1 shadow-sm',
-        className,
-      )}
+      className={cn('flex flex-wrap gap-1', className)}
     >
       {CATEGORIES.map(({ id, label, Icon }) => {
         const on = enabled.has(id);
@@ -56,13 +63,13 @@ export function CategoryToggles({ value, onChange, className }: Props) {
             onClick={() => toggle(id)}
             title={label}
             className={cn(
-              'flex items-center gap-1.5 rounded px-2 py-1 text-xs font-medium transition-colors',
+              'flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors',
               on
-                ? 'bg-primary text-primary-foreground'
-                : 'text-foreground hover:bg-accent hover:text-accent-foreground',
+                ? CATEGORY_STYLES[id].chip
+                : 'bg-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground',
             )}
           >
-            <Icon className="h-3.5 w-3.5" aria-hidden />
+            <Icon className={cn('h-3.5 w-3.5', on ? CATEGORY_STYLES[id].icon : 'text-muted-foreground')} aria-hidden />
             <span>{label}</span>
           </button>
         );

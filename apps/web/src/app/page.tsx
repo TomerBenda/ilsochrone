@@ -18,6 +18,8 @@ import {
   type PoiCategory,
   type TimeBandMin,
 } from '@ilsochrone/providers';
+import { LogoChip } from '@/components/brand/LogoChip';
+import { ControlBar } from '@/components/controls/ControlBar';
 import { TimeSelector } from '@/components/controls/TimeSelector';
 import { ModeSelector } from '@/components/controls/ModeSelector';
 import { CategoryToggles } from '@/components/controls/CategoryToggles';
@@ -280,34 +282,26 @@ export default function HomePage() {
         />
       </div>
 
-      <header className="pointer-events-none absolute left-0 right-0 top-0 flex flex-wrap items-start justify-between gap-3 p-4">
-        <div className="pointer-events-auto rounded-lg bg-background/95 px-4 py-2 shadow-md ring-1 ring-border backdrop-blur">
-          <h1 className="text-base font-semibold">Ilsochrone</h1>
-          <p className="text-xs text-muted-foreground">
-            Where can you get in {state.minutes} min?
-          </p>
-          <p className="mt-0.5 text-[10px] text-muted-foreground/70">
-            Drag the pin to move origin · right-click the map to drop a destination
-          </p>
+      <header className="pointer-events-none absolute left-0 right-0 top-0 flex items-start gap-3 p-4">
+        <div className="pointer-events-auto">
+          <LogoChip />
         </div>
-        <div className="pointer-events-auto flex flex-col items-end gap-2">
-          <div className="flex flex-wrap gap-2">
-            <ModeSelector value={state.mode} onChange={onModeChange} />
-            <TimeSelector value={state.minutes} onChange={onMinutesChange} />
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <CategoryToggles value={state.categories} onChange={onCategoriesChange} />
-            <SurpriseMe
-              disabled={visiblePois.length === 0}
-              onClick={onSurprise}
-              title={
-                visiblePois.length === 0
-                  ? 'No reachable POIs yet — toggle a category or expand time'
-                  : `Pick one of ${visiblePois.length} reachable places`
-              }
-            />
-          </div>
-        </div>
+        <ControlBar className="mx-auto hidden md:flex">
+          <ModeSelector value={state.mode} onChange={onModeChange} />
+          <TimeSelector value={state.minutes} onChange={onMinutesChange} />
+          <CategoryToggles value={state.categories} onChange={onCategoriesChange} />
+          <SurpriseMe
+            disabled={visiblePois.length === 0}
+            onClick={onSurprise}
+            title={
+              visiblePois.length === 0
+                ? 'No reachable POIs yet — toggle a category or expand time'
+                : `Pick one of ${visiblePois.length} reachable places`
+            }
+          />
+        </ControlBar>
+        {/* Spacer balances the logo chip so the bar stays centered. */}
+        <div className="hidden w-24 md:block" aria-hidden />
       </header>
 
       <div className="absolute bottom-4 left-4">

@@ -28,7 +28,9 @@ export function SurpriseMe({ disabled, onClick, className, title }: Props) {
       )}
     >
       <Shuffle className="h-4 w-4" aria-hidden />
-      <span>Surprise me</span>
+      <span>
+        Surprise me <span aria-hidden>✨</span>
+      </span>
     </button>
   );
 }

@@ -13,7 +13,7 @@ export function TimeSelector({ value, onChange }: Props) {
     <div
       role="radiogroup"
       aria-label="Travel time"
-      className="inline-flex rounded-md border border-border bg-background p-1 shadow-sm"
+      className="inline-flex rounded-lg bg-muted p-1"
     >
       {TIME_BANDS_MIN.map((m) => (
         <button
