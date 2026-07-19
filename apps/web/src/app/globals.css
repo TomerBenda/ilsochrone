@@ -22,13 +22,16 @@
 
   [data-theme='dark'],
   .dark {
-    --background: 222 47% 11%;
-    --foreground: 210 40% 98%;
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
-    --border: 217 33% 17%;
-    --accent: 217 33% 17%;
-    --accent-foreground: 210 40% 98%;
+    --background: 24 15% 10%;
+    --foreground: 33 30% 92%;
+    --muted: 24 12% 17%;
+    --muted-foreground: 30 8% 66%;
+    --border: 24 12% 24%;
+    --accent: 21 45% 19%;
+    --accent-foreground: 33 100% 88%;
+    --primary: 21 88% 48%; /* brighter orange pops on dark */
+    --primary-hover: 24 94% 56%;
+    --primary-foreground: 0 0% 100%;
   }
 
   html,

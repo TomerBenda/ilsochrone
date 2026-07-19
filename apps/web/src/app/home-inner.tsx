@@ -25,11 +25,13 @@ import { TimeSelector } from '@/components/controls/TimeSelector';
 import { ModeSelector } from '@/components/controls/ModeSelector';
 import { CategoryToggles } from '@/components/controls/CategoryToggles';
 import { SurpriseMe } from '@/components/controls/SurpriseMe';
+import { ThemeToggle } from '@/components/controls/ThemeToggle';
 import { DestinationCard } from '@/components/destination/DestinationCard';
 import { BandLegend } from '@/components/legend/BandLegend';
 import { CoachMark } from '@/components/onboarding/CoachMark';
 import { tryGeolocate } from '@/lib/geolocation';
 import { useIsochroneBands } from '@/lib/hooks/useIsochroneBands';
+import { useTheme } from '@/lib/hooks/useTheme';
 import { useIsMobile } from '@/lib/hooks/useIsMobile';
 import { usePois } from '@/lib/hooks/usePois';
 import { bboxOf, isInsidePolygon } from '@/lib/polygon';
@@ -56,7 +58,8 @@ export function HomeInner() {
     () => new StadiaTileProvider({ apiKey: PUBLIC_CONFIG.stadiaApiKey || undefined }),
     [],
   );
-  const tileStyle = useMemo(() => tileProvider.getStyle('light'), [tileProvider]);
+  const { theme, toggle: toggleTheme } = useTheme();
+  const tileStyle = useMemo(() => tileProvider.getStyle(theme), [tileProvider, theme]);
 
   // Initial state: parse from URL on first render, fall back to public defaults.
   const initialState = useMemo<AppUrlState>(() => {
@@ -262,6 +265,7 @@ export function HomeInner() {
           onOriginDragEnd={onOriginDragEnd}
           bands={data}
           selectedMinutes={state.minutes}
+          theme={theme}
           originLoading={isLoading}
           onPickDestination={onPickDestination}
           onMapBackgroundClick={onMapBackgroundClick}
@@ -300,8 +304,9 @@ export function HomeInner() {
       </div>
 
       <header className="pointer-events-none absolute left-0 right-0 top-0 flex items-start gap-3 p-4">
-        <div className="pointer-events-auto">
+        <div className="pointer-events-auto flex items-start gap-2">
           <LogoChip />
+          <ThemeToggle theme={theme} onToggle={toggleTheme} />
         </div>
         <ControlBar className="mx-auto hidden md:flex">
           <ModeSelector value={state.mode} onChange={onModeChange} />
@@ -322,7 +327,7 @@ export function HomeInner() {
       </header>
 
       <div className="absolute bottom-4 left-4 hidden md:block">
-        <BandLegend selectedMinutes={state.minutes} />
+        <BandLegend selectedMinutes={state.minutes} theme={theme} />
       </div>
 
       {isMobile && (
@@ -345,7 +350,7 @@ export function HomeInner() {
                     : `Pick one of ${visiblePois.length} reachable places`
                 }
               />
-              <BandLegend selectedMinutes={state.minutes} />
+              <BandLegend selectedMinutes={state.minutes} theme={theme} />
             </>
           }
         />

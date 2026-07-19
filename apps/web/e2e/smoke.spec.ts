@@ -58,6 +58,15 @@ test('walking isochrone smoke', async ({ page }) => {
   expect(draggedBody.type).toBe('FeatureCollection');
 });
 
+test('theme: follows system dark and toggles back to light', async ({ page }) => {
+  test.setTimeout(90_000);
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.goto('/');
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await page.getByRole('button', { name: 'Switch to light theme' }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+});
+
 test('mobile: bottom sheet hosts the controls', async ({ page }) => {
   test.setTimeout(90_000);
   await page.setViewportSize({ width: 375, height: 667 });

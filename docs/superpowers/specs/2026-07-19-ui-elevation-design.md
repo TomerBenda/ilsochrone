@@ -136,6 +136,9 @@ Testing:
 
 ## 8. Non-goals (this round)
 
-Dark mode (tokens ready, not shipped) · POI clustering · suggested-places
+~~Dark mode~~ (shipped 2026-07-19-c: system-preference default + persisted
+sun/moon toggle; warm near-black tokens; alidade_smooth_dark basemap; graded
+dark band alphas 0.22/0.15/0.10/0.07/0.055 with validated monotonic legend
+swatches; dark category-chip variants) · POI clustering · suggested-places
 panel (T-17) · browser-side engine computation · custom basemap style ·
 cycling/transit UI enablement.

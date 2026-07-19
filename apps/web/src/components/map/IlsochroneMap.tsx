@@ -29,9 +29,9 @@ import {
 
 /**
  * Graded per-band fill opacity (bands nest, so zones stack every band >= m):
- * inner zones composite to a deep amber core (~0.34) fading to a pale peach
- * edge (0.04). Legend swatches in BandLegend are the computed composites —
- * keep the two in sync.
+ * inner zones composite to a deep amber core fading to a pale edge. Dark mode
+ * needs higher alphas for the same perceived warmth over the dark basemap.
+ * Legend swatches in BandLegend are the computed composites — keep in sync.
  */
 const BAND_FILL_OPACITY: Record<number, number> = {
   5: 0.18,
@@ -39,6 +39,14 @@ const BAND_FILL_OPACITY: Record<number, number> = {
   15: 0.08,
   20: 0.055,
   30: 0.045,
+};
+
+const DARK_BAND_FILL_OPACITY: Record<number, number> = {
+  5: 0.22,
+  10: 0.15,
+  15: 0.1,
+  20: 0.07,
+  30: 0.055,
 };
 
 interface Props {
@@ -52,6 +60,8 @@ interface Props {
   selectedMinutes: number;
   /** Shows a soft pulsing halo on the origin pin while bands are loading. */
   originLoading?: boolean;
+  /** Adjusts band paint (seams/ring/fill alphas) for the dark basemap. */
+  theme?: 'light' | 'dark';
   /** Optional destination pin + popup content (e.g. NavigateTo card). */
   destination?: { lng: number; lat: number; popup: React.ReactNode };
   /**
@@ -84,6 +94,7 @@ export function IlsochroneMap({
   bands,
   selectedMinutes,
   originLoading,
+  theme = 'light',
   destination,
   onPickDestination,
   onMapBackgroundClick,
@@ -156,7 +167,11 @@ export function IlsochroneMap({
               type="fill"
               filter={['==', ['get', 'minutes'], m]}
               layout={{ visibility: m <= selectedMinutes ? 'visible' : 'none' }}
-              paint={{ 'fill-color': '#f97316', 'fill-opacity': BAND_FILL_OPACITY[m] ?? 0.05 }}
+              paint={{
+                'fill-color': '#f97316',
+                'fill-opacity':
+                  (theme === 'dark' ? DARK_BAND_FILL_OPACITY[m] : BAND_FILL_OPACITY[m]) ?? 0.05,
+              }}
             />
           ))}
           {TIME_BANDS_MIN.map((m) => (
@@ -168,8 +183,14 @@ export function IlsochroneMap({
               layout={{ visibility: m <= selectedMinutes ? 'visible' : 'none' }}
               paint={
                 m === selectedMinutes
-                  ? { 'line-color': '#c2410c', 'line-width': 3, 'line-opacity': 0.9 }
-                  : { 'line-color': '#ffffff', 'line-width': 1.2, 'line-opacity': 0.95 }
+                  ? {
+                      'line-color': theme === 'dark' ? '#fb923c' : '#c2410c',
+                      'line-width': 3,
+                      'line-opacity': 0.9,
+                    }
+                  : theme === 'dark'
+                    ? { 'line-color': '#1c1917', 'line-width': 1.2, 'line-opacity': 0.55 }
+                    : { 'line-color': '#ffffff', 'line-width': 1.2, 'line-opacity': 0.95 }
               }
             />
           ))}

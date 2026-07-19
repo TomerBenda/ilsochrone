@@ -27,14 +27,32 @@ const CATEGORIES: { id: PoiCategory; label: string; Icon: LucideIcon }[] = [
   { id: 'beach', label: 'Beaches', Icon: Waves },
 ];
 
-/** Pastel chip fill + saturated icon per category (warm & playful, harmonized). */
+/** Pastel chip fill + saturated icon per category (warm & playful, harmonized; deep fills in dark). */
 const CATEGORY_STYLES: Record<PoiCategory, { chip: string; icon: string }> = {
-  park: { chip: 'bg-emerald-100 text-emerald-900', icon: 'text-emerald-600' },
-  cafe: { chip: 'bg-amber-100 text-amber-900', icon: 'text-amber-600' },
-  restaurant: { chip: 'bg-rose-100 text-rose-900', icon: 'text-rose-600' },
-  museum: { chip: 'bg-violet-100 text-violet-900', icon: 'text-violet-600' },
-  viewpoint: { chip: 'bg-sky-100 text-sky-900', icon: 'text-sky-600' },
-  beach: { chip: 'bg-cyan-100 text-cyan-900', icon: 'text-cyan-600' },
+  park: {
+    chip: 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200',
+    icon: 'text-emerald-600 dark:text-emerald-400',
+  },
+  cafe: {
+    chip: 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200',
+    icon: 'text-amber-600 dark:text-amber-400',
+  },
+  restaurant: {
+    chip: 'bg-rose-100 text-rose-900 dark:bg-rose-950 dark:text-rose-200',
+    icon: 'text-rose-600 dark:text-rose-400',
+  },
+  museum: {
+    chip: 'bg-violet-100 text-violet-900 dark:bg-violet-950 dark:text-violet-200',
+    icon: 'text-violet-600 dark:text-violet-400',
+  },
+  viewpoint: {
+    chip: 'bg-sky-100 text-sky-900 dark:bg-sky-950 dark:text-sky-200',
+    icon: 'text-sky-600 dark:text-sky-400',
+  },
+  beach: {
+    chip: 'bg-cyan-100 text-cyan-900 dark:bg-cyan-950 dark:text-cyan-200',
+    icon: 'text-cyan-600 dark:text-cyan-400',
+  },
 };
 
 export function CategoryToggles({ value, onChange, className }: Props) {
