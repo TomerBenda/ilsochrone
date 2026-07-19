@@ -13,9 +13,14 @@
  *   400 invalid_request      — params failed Zod validation
  *   401 missing_api_key      — server has no ORS_API_KEY configured
  *   401 upstream_unauthorized — ORS rejected our key (invalid / unverified)
+ *   422 out_of_coverage      — origin outside the local engine's covered area
  *   429 rate_limited         — ORS free-tier exhausted
  *   502 upstream_failed      — ORS returned a non-2xx we don't have a label for
  *   500 internal_error       — anything else
+ *
+ * Provider selection: ISOCHRONE_PROVIDER=local|ors (see lib/server/isochrone-providers).
+ * With ISOCHRONE_FALLBACK=ors, unexpected local-engine errors fall back to ORS;
+ * out-of-coverage never falls back — 422 is the honest answer there.
  *
  * In development (NODE_ENV !== 'production') we attach `debug.{message, status,
  * body}` so the actual upstream error is visible in DevTools without grepping
@@ -26,10 +31,14 @@ import { z } from 'zod';
 import {
   IsochroneRequestSchema,
   OrsError,
-  OrsIsochroneProvider,
   TIME_BANDS_MIN,
   TravelModeSchema,
 } from '@ilsochrone/providers';
+import { OutOfCoverageError } from '@ilsochrone/providers/server';
+import {
+  getIsochroneProviders,
+  MissingApiKeyError,
+} from '@/lib/server/isochrone-providers';
 
 export const runtime = 'nodejs';
 export const revalidate = 60;
@@ -45,22 +54,6 @@ const QuerySchema = z.object({
     ),
   mode: TravelModeSchema.default('walk'),
 });
-
-let provider: OrsIsochroneProvider | null = null;
-function getProvider(): OrsIsochroneProvider {
-  if (provider) return provider;
-  const apiKey = process.env.ORS_API_KEY;
-  if (!apiKey) throw new MissingApiKeyError();
-  provider = new OrsIsochroneProvider({ apiKey });
-  return provider;
-}
-
-class MissingApiKeyError extends Error {
-  constructor() {
-    super('ORS_API_KEY is not set on the server.');
-    this.name = 'MissingApiKeyError';
-  }
-}
 
 const isDev = process.env.NODE_ENV !== 'production';
 
@@ -86,7 +79,15 @@ export async function GET(request: Request) {
   });
 
   try {
-    const result = await getProvider().getIsochrone(req);
+    const { primary, fallback } = getIsochroneProviders();
+    let result;
+    try {
+      result = await primary.getIsochrone(req);
+    } catch (err) {
+      if (err instanceof OutOfCoverageError || !fallback) throw err;
+      console.warn('[/api/isochrone] primary provider failed; falling back to ors', summarize(err));
+      result = await fallback.getIsochrone(req);
+    }
     return NextResponse.json(result, {
       headers: {
         'Cache-Control': 's-maxage=60, stale-while-revalidate=600',
@@ -106,6 +107,13 @@ function errorResponse(err: unknown): NextResponse {
     return NextResponse.json(
       withDebug({ error: 'missing_api_key' }, err),
       { status: 401 },
+    );
+  }
+
+  if (err instanceof OutOfCoverageError) {
+    return NextResponse.json(
+      { error: 'out_of_coverage', message: err.message },
+      { status: 422 },
     );
   }
 

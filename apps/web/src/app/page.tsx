@@ -322,6 +322,7 @@ function Status({ isLoading, error }: { isLoading: boolean; error: unknown }) {
 function errorMessage(err: unknown): string {
   if (typeof err === 'object' && err !== null && 'status' in err) {
     const status = (err as { status?: number }).status;
+    if (status === 422) return 'This spot is outside the covered area (Tel Aviv metro).';
     if (status === 429) return 'Rate-limited. Try again in a few seconds.';
     if (status === 502) return 'Upstream routing service is unavailable.';
   }

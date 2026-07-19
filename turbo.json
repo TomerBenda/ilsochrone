@@ -11,6 +11,9 @@
         "GEOAPIFY_API_KEY",
         "STADIA_API_KEY",
         "MAPTILER_API_KEY",
+        "ISOCHRONE_PROVIDER",
+        "ISOCHRONE_FALLBACK",
+        "ISOCHRONE_GRAPH_PATH",
         "NEXT_PUBLIC_*"
       ]
     },
@@ -22,6 +25,9 @@
         "GEOAPIFY_API_KEY",
         "STADIA_API_KEY",
         "MAPTILER_API_KEY",
+        "ISOCHRONE_PROVIDER",
+        "ISOCHRONE_FALLBACK",
+        "ISOCHRONE_GRAPH_PATH",
         "NEXT_PUBLIC_*"
       ]
     },
