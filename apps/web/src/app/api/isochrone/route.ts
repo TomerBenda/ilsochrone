@@ -72,13 +72,12 @@ export async function GET(request: Request) {
     );
   }
 
-  const req = IsochroneRequestSchema.parse({
-    origin: [parsed.data.lng, parsed.data.lat],
-    mode: parsed.data.mode,
-    minutes: parsed.data.t,
-  });
-
   try {
+    const req = IsochroneRequestSchema.parse({
+      origin: [parsed.data.lng, parsed.data.lat],
+      mode: parsed.data.mode,
+      minutes: parsed.data.t,
+    });
     const { primary, fallback } = getIsochroneProviders();
     let result;
     try {

@@ -59,7 +59,9 @@ class _WalkHandler(osmium.SimpleHandler):
                 continue
             alon, alat = a.location.lon, a.location.lat
             blon, blat = b.location.lon, b.location.lat
-            # Clip: keep segments with BOTH endpoints inside the bbox.
+            # Clip: keep segments with BOTH endpoints inside the bbox. Edges
+            # straddling the boundary are dropped — acceptable because the
+            # clip bbox is deliberately more generous than the product area.
             if not (self._inside(alon, alat) and self._inside(blon, blat)):
                 continue
             length = _haversine_m(alon, alat, blon, blat)

@@ -38,6 +38,13 @@ jobs:
       - name: Unit tests
         run: pnpm test
 
+      # Guards the client-bundle purity invariant: a server-only symbol
+      # (node:fs / engine) leaking into the client barrel only fails at build.
+      - name: Build
+        run: pnpm build
+        env:
+          NEXT_PUBLIC_STADIA_API_KEY: ci-placeholder
+
   pipeline:
     runs-on: ubuntu-latest
     timeout-minutes: 15

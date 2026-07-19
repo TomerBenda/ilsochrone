@@ -72,7 +72,7 @@ export function buildAsset(spec: AssetSpec): ArrayBuffer {
   const csrGeomRef = new Uint32Array(dCount);
   let di = 0;
   adjacency.forEach((entries, n) => {
-    entries.sort((x, y) => x[0] - y[0] || x[2] - y[2]);
+    entries.sort((x, y) => x[0] - y[0] || x[1] - y[1] || x[2] - y[2]); // (target, time, ref) — matches binfmt.py
     for (const [target, timeCs, ref] of entries) {
       csrTargets[di] = target;
       csrTimeCs[di] = timeCs;
