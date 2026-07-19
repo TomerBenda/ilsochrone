@@ -6,9 +6,9 @@
  * State flow:
  *   URL  ──parse──► state  ──serialize──► history.replaceState
  *                  │
- *                  ├──► <IlsochroneMap origin={...} polygon={...} />
- *                  ├──► <TimeSelector value={minutes} />
- *                  └──► useIsochrone(...) → SWR → /api/isochrone → ORS
+ *                  ├──► <IlsochroneMap origin={...} bands={...} />
+ *                  ├──► <TimeSelector value={minutes} />  (pure client state)
+ *                  └──► useIsochroneBands(...) → SWR → /api/isochrone?bands=1 → local engine
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';

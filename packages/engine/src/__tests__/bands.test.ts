@@ -18,8 +18,14 @@ const CENTER: [number, number] = [34.7821, 32.0818];
 
 describe('computeIsochroneBands', () => {
   it('one pass equals per-band computeIsochrone results', () => {
-    const { bands, snapDistanceM } = computeIsochroneBands(GRID, CENTER, [5, 10, 15]);
-    expect(bands.map((b) => b.minutes)).toEqual([5, 10, 15]);
+    // Bands chosen so the grid genuinely straddles cutoffs: at 2 min (120 s)
+    // the 144 s neighbors are beyond the band but finite in the shared
+    // max-cutoff times array — the exact window where the one-pass
+    // optimization could diverge from solo runs if the beyond-cutoff
+    // interpolation were wrong. (With all-nodes-inside bands the deep-equal
+    // would pass vacuously.)
+    const { bands, snapDistanceM } = computeIsochroneBands(GRID, CENTER, [2, 5, 10]);
+    expect(bands.map((b) => b.minutes)).toEqual([2, 5, 10]);
     expect(snapDistanceM).toBeLessThan(10);
     for (const band of bands) {
       const solo = computeIsochrone(GRID, CENTER, band.minutes);
