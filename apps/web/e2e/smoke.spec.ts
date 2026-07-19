@@ -1,7 +1,7 @@
 /**
- * T-13 smoke: load /, see a walking isochrone polygon (local engine), see POI
- * markers inside it, change the time band, and drag the origin pin — each map
- * state change must refetch the isochrone.
+ * T-13 smoke, bands edition: load /, get all five nested bands from the local
+ * engine, see POI markers, change the time band WITHOUT a network refetch,
+ * and drag the origin pin (which does refetch).
  *
  * Requires GEOAPIFY_API_KEY in apps/web/.env.local for the POI assertion.
  */
@@ -15,10 +15,11 @@ test('walking isochrone smoke', async ({ page }) => {
   const firstIso = page.waitForResponse(isIso);
   await page.goto('/');
 
-  // 1. Initial isochrone comes from the local engine and is a polygon.
+  // 1. Initial response carries all five nested bands from the local engine.
   const first = await firstIso;
   const body = await first.json();
-  expect(['Polygon', 'MultiPolygon']).toContain(body.polygon.type);
+  expect(body.type).toBe('FeatureCollection');
+  expect(body.features).toHaveLength(5);
   expect(body.metadata.provider).toBe('local');
 
   // 2. Origin pin is on the map.
@@ -30,17 +31,19 @@ test('walking isochrone smoke', async ({ page }) => {
     timeout: 20_000,
   });
 
-  // 4. Changing the time band refetches with t=30.
-  const iso30Promise = page.waitForResponse((r) => isIso(r) && r.url().includes('t=30'));
-  await page.getByRole('radio', { name: '30 min' }).click();
-  const iso30 = await iso30Promise;
-  const body30 = await iso30.json();
-  expect(['Polygon', 'MultiPolygon']).toContain(body30.polygon.type);
+  // 4. Changing the time band is INSTANT — no new isochrone request.
+  let extraRequests = 0;
+  page.on('request', (r) => {
+    if (r.url().includes('/api/isochrone')) extraRequests++;
+  });
+  await page.getByRole('radio', { name: '30 min' }).first().click();
+  await page.waitForTimeout(1500);
+  expect(extraRequests).toBe(0);
 
   // 5. Dragging the origin pin refetches for a new origin (different URL).
-  const beforeDragUrl = iso30.url();
+  const beforeDragUrl = first.url();
   const draggedPromise = page.waitForResponse(
-    (r) => isIso(r) && r.url().includes('t=30') && r.url() !== beforeDragUrl,
+    (r) => isIso(r) && r.url().includes('bands=1') && r.url() !== beforeDragUrl,
   );
   const box = await pin.boundingBox();
   expect(box).not.toBeNull();
@@ -52,5 +55,13 @@ test('walking isochrone smoke', async ({ page }) => {
   await page.mouse.up();
   const dragged = await draggedPromise;
   const draggedBody = await dragged.json();
-  expect(['Polygon', 'MultiPolygon']).toContain(draggedBody.polygon.type);
+  expect(draggedBody.type).toBe('FeatureCollection');
+});
+
+test('mobile: bottom sheet hosts the controls', async ({ page }) => {
+  test.setTimeout(90_000);
+  await page.setViewportSize({ width: 375, height: 667 });
+  await page.goto('/');
+  await expect(page.getByLabel('Map controls')).toBeVisible();
+  await expect(page.getByLabel('Map controls').getByRole('radio', { name: '15 min' })).toBeVisible();
 });

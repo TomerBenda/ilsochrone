@@ -30,6 +30,7 @@ import { BandLegend } from '@/components/legend/BandLegend';
 import { CoachMark } from '@/components/onboarding/CoachMark';
 import { tryGeolocate } from '@/lib/geolocation';
 import { useIsochroneBands } from '@/lib/hooks/useIsochroneBands';
+import { useIsMobile } from '@/lib/hooks/useIsMobile';
 import { usePois } from '@/lib/hooks/usePois';
 import { bboxOf, isInsidePolygon } from '@/lib/polygon';
 import { PUBLIC_CONFIG } from '@/lib/config';
@@ -113,6 +114,7 @@ export default function HomePage() {
   // Tracks whether the user has discovered the two core gestures; gates the
   // one-time coach mark.
   const [hasInteracted, setHasInteracted] = useState(false);
+  const isMobile = useIsMobile();
 
   const onOriginDragEnd = useCallback((next: { lng: number; lat: number }) => {
     setHasInteracted(true);
@@ -323,7 +325,7 @@ export default function HomePage() {
         <BandLegend selectedMinutes={state.minutes} />
       </div>
 
-      <div className="md:hidden">
+      {isMobile && (
         <MobileSheet
           peek={
             <>
@@ -347,7 +349,7 @@ export default function HomePage() {
             </>
           }
         />
-      </div>
+      )}
 
       {data && visiblePois.length === 0 && state.categories.length > 0 && !error && (
         <div className="pointer-events-none absolute bottom-16 left-4 hidden md:block">
