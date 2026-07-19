@@ -290,6 +290,7 @@ export default function HomePage() {
               pois={visiblePois}
               onSelect={onPoiSelect}
               selectedId={selectedPoi?.id}
+              zoom={state.zoom}
             />
           }
           cameraTarget={cameraTarget ?? undefined}

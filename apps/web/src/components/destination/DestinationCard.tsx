@@ -37,7 +37,7 @@ export function DestinationCard({
       role="dialog"
       aria-label={title}
       className={cn(
-        'w-72 rounded-lg border border-border bg-background p-3 shadow-lg',
+        'ilso-pop w-72 rounded-xl border border-border bg-background p-3 shadow-lg',
         className,
       )}
     >
