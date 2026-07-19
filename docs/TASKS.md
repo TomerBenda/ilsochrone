@@ -75,10 +75,11 @@ Conventions:
 - **Files.** `apps/web/src/components/map/Attribution.tsx`, audits noted in PR description.
 - **DoD.** axe-core on `/` reports zero serious violations. All four attribution links resolve. iPhone SE viewport screenshot looks correct in the PR.
 
-### T-13 · Playwright smoke
+### T-13 · Playwright smoke (DONE locally 2026-07-19)
 - **Goal.** One end-to-end smoke test: load `/`, drop a pin, change time, assert polygon and ≥ 1 POI marker exist.
 - **Files.** `apps/web/e2e/smoke.spec.ts`, CI step added to T-02 workflow.
 - **DoD.** Smoke passes locally and in CI on a built preview.
+- **Status.** Local run green (polygon from local engine, POI markers, time-band + pin-drag refetch). CI wiring deferred: the POI assertion needs a `GEOAPIFY_API_KEY` repo secret — add the job when secrets are provisioned.
 
 ### T-14 · Open Graph + README + screenshots
 - **Goal.** Static OG image for `/` (Next ImageResponse), production README with the project pitch, screenshots/GIF, and "how to run."
