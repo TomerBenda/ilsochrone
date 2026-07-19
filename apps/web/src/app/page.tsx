@@ -23,8 +23,9 @@ import { ModeSelector } from '@/components/controls/ModeSelector';
 import { CategoryToggles } from '@/components/controls/CategoryToggles';
 import { SurpriseMe } from '@/components/controls/SurpriseMe';
 import { DestinationCard } from '@/components/destination/DestinationCard';
+import { BandLegend } from '@/components/legend/BandLegend';
 import { tryGeolocate } from '@/lib/geolocation';
-import { useIsochrone } from '@/lib/hooks/useIsochrone';
+import { useIsochroneBands } from '@/lib/hooks/useIsochroneBands';
 import { usePois } from '@/lib/hooks/usePois';
 import { bboxOf, isInsidePolygon } from '@/lib/polygon';
 import { PUBLIC_CONFIG } from '@/lib/config';
@@ -142,18 +143,25 @@ export default function HomePage() {
     setDestination(null);
   }, []);
 
-  const { data, error, isLoading } = useIsochrone({
+  const { data, error, isLoading } = useIsochroneBands({
     lng: state.origin.lng,
     lat: state.origin.lat,
     minutes: state.minutes,
     mode: state.mode,
   });
 
+  // The band matching the selected time (largest band <= minutes); everything
+  // POI-related keys off this polygon, exactly like the single-band days.
+  const selectedPolygon = useMemo(() => {
+    const f = data?.features.filter((x) => x.properties.minutes <= state.minutes).at(-1);
+    return f?.geometry;
+  }, [data, state.minutes]);
+
   // POIs are scoped to the polygon's bbox; we filter to inside the polygon
   // client-side in PoiLayer. Skip fetch entirely if no polygon or no categories.
   const polygonBbox = useMemo(
-    () => (data?.polygon ? bboxOf(data.polygon) : null),
-    [data?.polygon],
+    () => (selectedPolygon ? bboxOf(selectedPolygon) : null),
+    [selectedPolygon],
   );
   const { data: poiData } = usePois({
     bbox: polygonBbox,
@@ -164,9 +172,9 @@ export default function HomePage() {
   // PoiLayer (renders them) and SurpriseMe (picks from them).
   const visiblePois = useMemo<Poi[]>(() => {
     const list = poiData?.pois ?? [];
-    if (!data?.polygon) return list;
-    return list.filter((p) => isInsidePolygon([p.lngLat[0], p.lngLat[1]], data.polygon));
-  }, [poiData?.pois, data?.polygon]);
+    if (!selectedPolygon) return list;
+    return list.filter((p) => isInsidePolygon([p.lngLat[0], p.lngLat[1]], selectedPolygon));
+  }, [poiData?.pois, selectedPolygon]);
 
   // If the selected POI falls out of the visible set (categories or time
   // changed), dismiss it so the card doesn't orphan over an absent marker.
@@ -234,7 +242,9 @@ export default function HomePage() {
           }
           origin={state.origin}
           onOriginDragEnd={onOriginDragEnd}
-          polygon={data?.polygon}
+          bands={data}
+          selectedMinutes={state.minutes}
+          originLoading={isLoading}
           onPickDestination={onPickDestination}
           onMapBackgroundClick={onMapBackgroundClick}
           destination={
@@ -299,6 +309,10 @@ export default function HomePage() {
           </div>
         </div>
       </header>
+
+      <div className="absolute bottom-4 left-4">
+        <BandLegend selectedMinutes={state.minutes} />
+      </div>
 
       <Status isLoading={isLoading} error={error} />
     </main>

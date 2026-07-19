@@ -9,7 +9,7 @@
  *     click events, and accepts a polygon and optional destination to render.
  *   - All provider logic stays out of components — they receive primitives.
  */
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import Map, {
   Marker,
   Popup,
@@ -21,8 +21,11 @@ import Map, {
   type MapRef,
 } from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import type { Polygon, MultiPolygon, Feature } from 'geojson';
-import type { TileStyle } from '@ilsochrone/providers';
+import {
+  TIME_BANDS_MIN,
+  type IsochroneBandsFeatureCollection,
+  type TileStyle,
+} from '@ilsochrone/providers';
 
 interface Props {
   tileStyle: TileStyle;
@@ -30,7 +33,11 @@ interface Props {
   onViewStateChange: (next: { longitude: number; latitude: number; zoom: number }) => void;
   origin: { lng: number; lat: number };
   onOriginDragEnd: (next: { lng: number; lat: number }) => void;
-  polygon?: Polygon | MultiPolygon;
+  /** All computed time bands; layers below/at selectedMinutes are shown. */
+  bands?: IsochroneBandsFeatureCollection;
+  selectedMinutes: number;
+  /** Shows a soft pulsing halo on the origin pin while bands are loading. */
+  originLoading?: boolean;
   /** Optional destination pin + popup content (e.g. NavigateTo card). */
   destination?: { lng: number; lat: number; popup: React.ReactNode };
   /**
@@ -60,18 +67,15 @@ export function IlsochroneMap({
   onViewStateChange,
   origin,
   onOriginDragEnd,
-  polygon,
+  bands,
+  selectedMinutes,
+  originLoading,
   destination,
   onPickDestination,
   onMapBackgroundClick,
   poiMarkers,
   cameraTarget,
 }: Props) {
-  const polygonFeature = useMemo<Feature<Polygon | MultiPolygon> | null>(() => {
-    if (!polygon) return null;
-    return { type: 'Feature', geometry: polygon, properties: {} };
-  }, [polygon]);
-
   const mapRef = useRef<MapRef>(null);
 
   // Drive camera flights from outside. Re-fires whenever cameraTarget.key
@@ -125,24 +129,36 @@ export function IlsochroneMap({
       style={{ width: '100%', height: '100%' }}
     >
       <NavigationControl position="top-right" />
-      <AttributionControl
-        position="bottom-right"
-        compact
-        customAttribution={tileStyle.attribution}
-      />
+      {/* Sources already inject their own attribution; a customAttribution
+          here duplicated the line. */}
+      <AttributionControl position="bottom-right" compact />
 
-      {polygonFeature && (
-        <Source id="isochrone" type="geojson" data={polygonFeature}>
-          <Layer
-            id="isochrone-fill"
-            type="fill"
-            paint={{ 'fill-color': '#3b82f6', 'fill-opacity': 0.18 }}
-          />
-          <Layer
-            id="isochrone-line"
-            type="line"
-            paint={{ 'line-color': '#1d4ed8', 'line-width': 2 }}
-          />
+      {bands && (
+        <Source id="isochrone-bands" type="geojson" data={bands}>
+          {TIME_BANDS_MIN.map((m) => (
+            <Layer
+              key={`fill-${m}`}
+              id={`band-fill-${m}`}
+              type="fill"
+              filter={['==', ['get', 'minutes'], m]}
+              layout={{ visibility: m <= selectedMinutes ? 'visible' : 'none' }}
+              paint={{ 'fill-color': '#f97316', 'fill-opacity': 0.05 }}
+            />
+          ))}
+          {TIME_BANDS_MIN.map((m) => (
+            <Layer
+              key={`line-${m}`}
+              id={`band-line-${m}`}
+              type="line"
+              filter={['==', ['get', 'minutes'], m]}
+              layout={{ visibility: m <= selectedMinutes ? 'visible' : 'none' }}
+              paint={
+                m === selectedMinutes
+                  ? { 'line-color': '#c2410c', 'line-width': 2.5, 'line-opacity': 0.9 }
+                  : { 'line-color': '#ffffff', 'line-width': 1, 'line-opacity': 0.9 }
+              }
+            />
+          ))}
         </Source>
       )}
 
@@ -153,7 +169,7 @@ export function IlsochroneMap({
         onDragEnd={(e) => onOriginDragEnd({ lng: e.lngLat.lng, lat: e.lngLat.lat })}
         anchor="bottom"
       >
-        <OriginPin />
+        <OriginPin loading={originLoading} />
       </Marker>
 
       {destination && (
@@ -182,7 +198,7 @@ export function IlsochroneMap({
   );
 }
 
-function OriginPin() {
+function OriginPin({ loading }: { loading?: boolean }) {
   // Outer wrapper is a transparent hit-area extender so the drag target is
   // forgiving (~48px) without changing the visible pin (~32px). The cursor
   // affordance teaches the gesture: grab on hover, grabbing while dragging.
@@ -190,9 +206,15 @@ function OriginPin() {
     <div
       role="img"
       aria-label="Origin (drag to move)"
-      title="Drag to move origin"
-      className="flex h-12 w-12 cursor-grab items-center justify-center active:cursor-grabbing"
+      title="Drag me anywhere"
+      className="relative flex h-12 w-12 cursor-grab items-center justify-center active:cursor-grabbing"
     >
+      {loading && (
+        <span
+          className="absolute h-8 w-8 rounded-full bg-primary/40 motion-safe:animate-ping"
+          aria-hidden
+        />
+      )}
       <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-primary shadow-lg">
         <span className="h-2 w-2 rounded-full bg-white" />
       </div>
