@@ -51,4 +51,11 @@ export interface ProviderMetadata {
   computedAt: string;
   /** Optional non-fatal warnings worth surfacing in the UI. */
   warnings?: ProviderWarning[];
+  /** Present when a self-maintained engine produced the result — staleness is always visible. */
+  engine?: {
+    version: string;
+    profile: string;
+    graphBuiltAt: string;
+    osmSnapshot: string;
+  };
 }

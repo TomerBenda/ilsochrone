@@ -11,7 +11,8 @@
     "./isochrone": "./src/isochrone/index.ts",
     "./poi": "./src/poi/index.ts",
     "./tile": "./src/tile/index.ts",
-    "./transit": "./src/transit/index.ts"
+    "./transit": "./src/transit/index.ts",
+    "./server": "./src/server.ts"
   },
   "scripts": {
     "lint": "eslint . --max-warnings 0",
@@ -20,10 +21,15 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@ilsochrone/engine": "workspace:*",
     "zod": "^3.23.8"
   },
   "devDependencies": {
     "@eslint/js": "^9.12.0",
+    "@turf/area": "^7.1.0",
+    "@turf/helpers": "^7.1.0",
+    "@turf/intersect": "^7.1.0",
+    "@turf/union": "^7.1.0",
     "@types/geojson": "^7946.0.14",
     "@types/node": "^20.16.10",
     "eslint": "^9.12.0",
