@@ -1,5 +1,10 @@
 export const ENGINE_VERSION = '0.1.0';
-export { computeIsochrone } from './isochrone';
+export {
+  computeIsochrone,
+  computeIsochroneBands,
+  type IsochroneBand,
+  type IsochroneBandsComputation,
+} from './isochrone';
 export { loadGraph, type WalkGraph } from './graph';
 export { readAssetMeta, parseAsset, type ParsedAsset } from './asset/reader';
 export { snapOrigin, shortestTimes, SNAP_MAX_M, type SnapPoint } from './search';
