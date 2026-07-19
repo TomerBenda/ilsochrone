@@ -20,6 +20,7 @@ import {
 } from '@ilsochrone/providers';
 import { LogoChip } from '@/components/brand/LogoChip';
 import { ControlBar } from '@/components/controls/ControlBar';
+import { MobileSheet } from '@/components/sheet/MobileSheet';
 import { TimeSelector } from '@/components/controls/TimeSelector';
 import { ModeSelector } from '@/components/controls/ModeSelector';
 import { CategoryToggles } from '@/components/controls/CategoryToggles';
@@ -304,8 +305,34 @@ export default function HomePage() {
         <div className="hidden w-24 md:block" aria-hidden />
       </header>
 
-      <div className="absolute bottom-4 left-4">
+      <div className="absolute bottom-4 left-4 hidden md:block">
         <BandLegend selectedMinutes={state.minutes} />
+      </div>
+
+      <div className="md:hidden">
+        <MobileSheet
+          peek={
+            <>
+              <TimeSelector value={state.minutes} onChange={onMinutesChange} />
+              <ModeSelector value={state.mode} onChange={onModeChange} />
+            </>
+          }
+          expanded={
+            <>
+              <CategoryToggles value={state.categories} onChange={onCategoriesChange} />
+              <SurpriseMe
+                disabled={visiblePois.length === 0}
+                onClick={onSurprise}
+                title={
+                  visiblePois.length === 0
+                    ? 'No reachable POIs yet — toggle a category or expand time'
+                    : `Pick one of ${visiblePois.length} reachable places`
+                }
+              />
+              <BandLegend selectedMinutes={state.minutes} />
+            </>
+          }
+        />
       </div>
 
       <Status isLoading={isLoading} error={error} />
