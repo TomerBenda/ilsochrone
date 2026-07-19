@@ -9,7 +9,7 @@
  * components depend on this interface via `IsochroneProvider`.
  */
 import { z } from 'zod';
-import type { Polygon, MultiPolygon } from 'geojson';
+import type { Feature, Polygon, MultiPolygon } from 'geojson';
 import { LngLatSchema, TravelModeSchema, type ProviderMetadata, type TravelMode } from '../types';
 
 /** Allowed time bands in minutes. Keep in sync with the UI selector. */
@@ -32,6 +32,34 @@ export interface IsochroneResult {
   metadata: ProviderMetadata;
 }
 
+export const IsochroneBandsRequestSchema = z.object({
+  origin: LngLatSchema,
+  mode: TravelModeSchema,
+  bands: z
+    .array(
+      z.number().int().refine(
+        (n): n is TimeBandMin => (TIME_BANDS_MIN as readonly number[]).includes(n),
+        { message: `each band must be one of ${TIME_BANDS_MIN.join(', ')}` },
+      ),
+    )
+    .nonempty(),
+});
+export type IsochroneBandsRequest = z.infer<typeof IsochroneBandsRequestSchema>;
+
+export interface IsochroneBandsResult {
+  /** Ascending by minutes; polygons share one origin snapshot. */
+  bands: { minutes: TimeBandMin; polygon: Polygon | MultiPolygon }[];
+  metadata: ProviderMetadata;
+}
+
+/** Wire shape of /api/isochrone?bands=1 — shared by the route and the client hook. */
+export type IsochroneBandFeature = Feature<Polygon | MultiPolygon, { minutes: number }>;
+export interface IsochroneBandsFeatureCollection {
+  type: 'FeatureCollection';
+  features: IsochroneBandFeature[];
+  metadata: ProviderMetadata;
+}
+
 export interface IsochroneProvider {
   /** Stable adapter id, e.g. `'ors'`, `'otp'`. */
   readonly name: string;
@@ -39,4 +67,10 @@ export interface IsochroneProvider {
   supports(mode: TravelMode): boolean;
   /** Compute an isochrone. Should throw on upstream failure; the route handler maps to HTTP. */
   getIsochrone(req: IsochroneRequest): Promise<IsochroneResult>;
+  /**
+   * Optional: compute several nested time bands in one shot (one origin
+   * snapshot). Adapters that can't do this cheaply simply omit it; the route
+   * degrades to a single band.
+   */
+  getIsochroneBands?(req: IsochroneBandsRequest): Promise<IsochroneBandsResult>;
 }

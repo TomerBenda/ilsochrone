@@ -68,6 +68,24 @@ describe('LocalIsochroneProvider', () => {
   });
 });
 
+describe('getIsochroneBands', () => {
+  it('returns ascending bands sharing one metadata block', async () => {
+    const p = new LocalIsochroneProvider({ source: fixtureSource() });
+    const res = await p.getIsochroneBands({ origin: [34.7809, 32.0809], mode: 'walk', bands: [15, 5, 10] });
+    expect(res.bands.map((b) => b.minutes)).toEqual([5, 10, 15]);
+    for (const b of res.bands) expect(['Polygon', 'MultiPolygon']).toContain(b.polygon.type);
+    expect(res.metadata.provider).toBe('local');
+    expect(res.metadata.engine?.version).toBeTruthy();
+  });
+
+  it('rejects invalid band values via the schema', async () => {
+    const p = new LocalIsochroneProvider({ source: fixtureSource() });
+    await expect(
+      p.getIsochroneBands({ origin: [34.7809, 32.0809], mode: 'walk', bands: [7] as never }),
+    ).rejects.toThrow();
+  });
+});
+
 describe('BundledGraphSource', () => {
   it('loads an explicit asset path', async () => {
     const src = new BundledGraphSource({ assetPath: FIXTURE });
