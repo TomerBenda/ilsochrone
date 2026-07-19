@@ -1,6 +1,10 @@
 # UI Elevation Round — Design
 
 _Status: Approved design · Owner: Tomer · Date: 2026-07-19_
+_Revision 2026-07-19-b (owner feedback: "palette doesn't read"): band fills are
+graded per band (0.18/0.12/0.08/0.055/0.045, deep core ~0.40 composite) instead
+of uniform 0.05; surfaces moved from near-white to warm cream (hsl 33 100%
+96.5%); legend swatches recomputed and revalidated (monotonic)._
 
 ## 1. Goal
 

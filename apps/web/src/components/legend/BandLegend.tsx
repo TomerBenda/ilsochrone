@@ -2,13 +2,17 @@
 
 import { TIME_BANDS_MIN } from '@ilsochrone/providers';
 
-/** Composite swatches of #F97316 accumulation over the basemap (validated sequential ramp). */
+/**
+ * Composite swatches of the graded #F97316 band stack over the basemap
+ * (validated monotonic ramp; keep in sync with BAND_FILL_OPACITY in
+ * IlsochroneMap).
+ */
 const SWATCHES: Record<number, string> = {
-  5: '#F4D1B9',
-  10: '#F3D7C4',
-  15: '#F3DDCE',
-  20: '#F3E4D9',
-  30: '#F2EAE4',
+  5: '#F5BE98',
+  10: '#F4CEB5',
+  15: '#F3DBCA',
+  20: '#F3E4DA',
+  30: '#F2EAE5',
 };
 
 export function BandLegend({ selectedMinutes }: { selectedMinutes: number }) {

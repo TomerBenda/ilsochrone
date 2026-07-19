@@ -5,12 +5,12 @@
 /* shadcn-style design tokens, simplified for MVP. */
 @layer base {
   :root {
-    --background: 40 33% 99%;
+    --background: 33 100% 96.5%;
     --foreground: 24 10% 10%;
-    --muted: 40 12% 94%;
-    --muted-foreground: 25 5% 45%;
-    --border: 33 14% 88%;
-    --accent: 33 100% 96%;
+    --muted: 33 55% 90%;
+    --muted-foreground: 25 10% 40%;
+    --border: 33 40% 82%;
+    --accent: 33 100% 92%;
     --accent-foreground: 15 75% 28%;
     --primary: 21 88% 40%; /* #C2410C — 4.8:1 on white */
     --primary-hover: 21 90% 48%; /* #EA580C */

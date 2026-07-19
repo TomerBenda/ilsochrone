@@ -27,6 +27,20 @@ import {
   type TileStyle,
 } from '@ilsochrone/providers';
 
+/**
+ * Graded per-band fill opacity (bands nest, so zones stack every band >= m):
+ * inner zones composite to a deep amber core (~0.34) fading to a pale peach
+ * edge (0.04). Legend swatches in BandLegend are the computed composites —
+ * keep the two in sync.
+ */
+const BAND_FILL_OPACITY: Record<number, number> = {
+  5: 0.18,
+  10: 0.12,
+  15: 0.08,
+  20: 0.055,
+  30: 0.045,
+};
+
 interface Props {
   tileStyle: TileStyle;
   viewState: { longitude: number; latitude: number; zoom: number };
@@ -142,7 +156,7 @@ export function IlsochroneMap({
               type="fill"
               filter={['==', ['get', 'minutes'], m]}
               layout={{ visibility: m <= selectedMinutes ? 'visible' : 'none' }}
-              paint={{ 'fill-color': '#f97316', 'fill-opacity': 0.05 }}
+              paint={{ 'fill-color': '#f97316', 'fill-opacity': BAND_FILL_OPACITY[m] ?? 0.05 }}
             />
           ))}
           {TIME_BANDS_MIN.map((m) => (
@@ -154,8 +168,8 @@ export function IlsochroneMap({
               layout={{ visibility: m <= selectedMinutes ? 'visible' : 'none' }}
               paint={
                 m === selectedMinutes
-                  ? { 'line-color': '#c2410c', 'line-width': 2.5, 'line-opacity': 0.9 }
-                  : { 'line-color': '#ffffff', 'line-width': 1, 'line-opacity': 0.9 }
+                  ? { 'line-color': '#c2410c', 'line-width': 3, 'line-opacity': 0.9 }
+                  : { 'line-color': '#ffffff', 'line-width': 1.2, 'line-opacity': 0.95 }
               }
             />
           ))}
