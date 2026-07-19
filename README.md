@@ -23,6 +23,7 @@ Open <http://localhost:3000>. See [docs/DEVELOPING.md](docs/DEVELOPING.md) for t
 - Architecture Decision Records:
   - [ADR-0001 — Web stack](docs/adr/0001-stack.md)
   - [ADR-0002 — Isochrone engine](docs/adr/0002-isochrone-engine.md)
+  - [ADR-0007 — Self-maintained isochrone engine](docs/adr/0007-self-maintained-isochrone-engine.md)
   - [ADR-0003 — POI and tile providers](docs/adr/0003-poi-and-tile-providers.md)
   - [ADR-0004 — Deployment and AI workflow](docs/adr/0004-deployment-and-ai-workflow.md)
   - [ADR-0005 — Navigation handoff](docs/adr/0005-navigation-handoff.md)
@@ -34,4 +35,4 @@ Next.js 14 (App Router), TypeScript strict, Turborepo + pnpm workspaces, MapLibr
 
 ## Status
 
-Pre-alpha. Specs landed; scaffolding in place; walking isochrone slice (T-04 through T-07) wired. Run `pnpm dev` after adding API keys to see the map and a live polygon.
+Pre-alpha. Walking isochrones are computed by a self-maintained engine (`packages/engine`) over a committed OSM-derived walk graph — no isochrone API key needed (ADR-0007). Run `pnpm dev` after copying `apps/web/.env.example` to `apps/web/.env.local` (POI/tile keys) to see the map and a live polygon.

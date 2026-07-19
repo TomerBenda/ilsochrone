@@ -32,19 +32,42 @@ Turborepo caches everything; the second run of `pnpm typecheck` should be instan
 ```
 apps/
   web/                  Next.js 14 App Router app
+    assets/graphs/      Committed walk-graph binary asset (built by tools/graph-pipeline)
     src/
       app/              Pages and route handlers
       components/       UI components (map/, controls/)
       lib/              Hooks, helpers, config
 packages/
+  engine/               Pure-TS isochrone engine (asset parsing, snap, Dijkstra, polygonize)
   providers/            Provider abstraction (isochrone, poi, tile, transit)
     src/
-      isochrone/        IsochroneProvider + ORS adapter
+      isochrone/        IsochroneProvider + ORS/local adapters
       poi/              PoiProvider + Geoapify adapter
       tile/             TileProvider + Stadia adapter
       transit/          TransitDataProvider (phase 2 only)
+tools/
+  graph-pipeline/       Python (uv) build pipeline: OSM extract -> walk-graph asset
 docs/                   PRD, ADRs, TASKS, research, this file
 ```
+
+## Graph pipeline (walk-graph asset)
+
+The isochrone engine consumes a binary walk-graph asset committed at
+`apps/web/assets/graphs/walk-tlv.v1.bin`, built by `tools/graph-pipeline`
+(Python, managed by [uv](https://docs.astral.sh/uv/) - not part of the pnpm
+workspace). Rebuild it when map data should refresh:
+
+```bash
+cd tools/graph-pipeline
+uv sync                 # one-time: creates .venv with Python 3.12
+uv run build-graph      # downloads the Geofabrik Israel extract (cached), writes the asset
+uv run pytest           # offline pipeline tests on the committed tiny fixture
+uv run build-graph --fixture  # regenerate packages/engine/src/__fixtures__/tiny-walk.v1.bin
+```
+
+Commit the regenerated asset. The binary format is a cross-language contract -
+see `docs/reference/graph-asset-format.md` before touching it. Engine/provider
+selection is `ISOCHRONE_PROVIDER=local|ors` (see `apps/web/.env.example`).
 
 ## How the layers talk
 

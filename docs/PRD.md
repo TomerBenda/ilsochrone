@@ -89,7 +89,8 @@ Explicitly _out_ of MVP: cycling, transit, driving, traffic, multi-origin compar
 │  └ shared lib/providers/*      │
 └──────┬─────────────────────────┘
        │
-       ├─► IsochroneProvider  ──► ORS adapter (MVP) ──► api.openrouteservice.org
+       ├─► IsochroneProvider  ──► Local engine (default) ──► packages/engine + committed walk-graph asset
+       │                       ├─► ORS adapter (fallback/comparison) ──► api.openrouteservice.org
        │                       └─► OTP adapter (phase 2) ──► self-hosted OTP
        │
        ├─► PoiProvider        ──► Geoapify adapter (MVP) ──► api.geoapify.com

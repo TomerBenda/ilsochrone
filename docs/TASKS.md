@@ -101,3 +101,8 @@ Conventions:
 - **Goal.** Promote latest preview to production. Tag `v0.1.0`. Post-mortem note: what worked, what didn't, what changed in the PRD.
 - **Files.** `CHANGELOG.md`, `docs/postmortem-v0.1.md`.
 - **DoD.** Live URL reachable; CHANGELOG has entries; postmortem references at least 3 ADR/PRD diffs that came out of building.
+
+### T-18 · Self-maintained isochrone engine (DONE 2026-07-19)
+- **Goal.** Replace the hosted ORS dependency with a repo-owned engine per the 2026-07-18 design doc: Python graph pipeline (`tools/graph-pipeline`, uv-managed) building a committed binary walk-graph asset; pure-TS engine (`packages/engine`) doing snap → cutoff Dijkstra → marching-squares polygonization; `LocalIsochroneProvider` behind the unchanged `IsochroneProvider` seam.
+- **Files.** `tools/graph-pipeline/**`, `packages/engine/**`, `packages/providers/src/{server.ts,isochrone/{local,bundled-source}.ts}`, `apps/web/src/lib/server/isochrone-providers.ts`, `apps/web/src/app/api/isochrone/route.ts`, `apps/web/assets/graphs/walk-tlv.v1.bin`, `docs/reference/graph-asset-format.md`, ADR-0007.
+- **DoD.** All met: pipeline pytest + engine/provider/web vitest green; cross-language fixture contract test; perf guard (warm 30-min isochrone ~42 ms < 200 ms); ORS IoU validation recorded in `docs/research/02-local-vs-ors-iou.md`; `ISOCHRONE_PROVIDER` selection with 422 out-of-coverage and optional ORS fallback.
